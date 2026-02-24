@@ -462,6 +462,18 @@ router.get("/users", async (req, res) => {
 
     const totalIncome = totalIncomeResult[0]?.totalIncome || 0;
 
+    const totalBalanceResult = await User.aggregate([
+      { $match: filterQuery },
+      {
+        $group: {
+          _id: null,
+          totalBalance: { $sum: "$gameData.balance" },
+        },
+      },
+    ]);
+
+    const totalBalance = totalBalanceResult[0]?.totalBalance || 0;
+
     const formattedUsers = users.map((user) => ({
       id: user.telegramId,
       name: `${user.first_name} ${user.last_name || ""}`.trim(),
@@ -491,6 +503,7 @@ router.get("/users", async (req, res) => {
           activeToday,
           newThisWeek,
           totalIncome,
+          totalBalance,
         },
       },
     });
