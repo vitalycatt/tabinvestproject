@@ -150,6 +150,7 @@ const stopBackgroundCheck = () => {
 
 // --- 🔹 Проверка при открытии модалки ---
 const checkPendingTask = () => {
+  if (!props.task) return;
   const pendingKey = `task-${props.task._id}-pending`;
   if (localStorage.getItem(pendingKey)) completeTaskLocallySilent();
 };
