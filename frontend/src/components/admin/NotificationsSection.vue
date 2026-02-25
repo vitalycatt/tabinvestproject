@@ -230,7 +230,7 @@
 </template>
 
 <script setup>
-import {computed, inject, onMounted, ref} from 'vue'
+import {computed, onMounted, ref} from 'vue'
 import {ApiService} from '@/services/apiService'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -238,11 +238,6 @@ import BaseForm from '@/components/ui/BaseForm.vue'
 import FormGroup from '@/components/ui/FormGroup.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmModal from '@/components/admin/modals/ConfirmModal.vue'
-
-const notifications = inject('notifications', {
-  addNotification: () => {
-  }
-})
 
 // Состояние загрузки и ошибок
 const loading = ref(false)
@@ -342,10 +337,6 @@ const loadHistory = async () => {
   } catch (err) {
     console.error('Error loading notifications history:', err)
     error.value = 'Ошибка загрузки истории уведомлений'
-    notifications.addNotification({
-      message: 'Ошибка загрузки истории уведомлений',
-      type: 'error'
-    })
     notificationsHistory.value = []
   } finally {
     loading.value = false
@@ -391,19 +382,11 @@ const sendNotification = async () => {
     const response = await ApiService.sendNotification(notificationData)
 
     if (response) {
-      notifications.addNotification({
-        message: 'Уведомление успешно отправлено',
-        type: 'success'
-      })
       await loadHistory()
       resetForm()
     }
   } catch (error) {
     console.error('Error sending notification:', error)
-    notifications.addNotification({
-      message: 'Ошибка при отправке уведомления',
-      type: 'error'
-    })
   } finally {
     loading.value = false
   }
@@ -412,10 +395,6 @@ const sendNotification = async () => {
 // Тестовая отправка
 const sendTestNotification = async () => {
   if (!selectedTestUser.value) {
-    notifications.addNotification({
-      message: 'Выберите пользователя для тестовой отправки',
-      type: 'warning'
-    })
     return
   }
 
@@ -428,16 +407,8 @@ const sendTestNotification = async () => {
     }
 
     await ApiService.sendTestNotification(testData)
-    notifications.addNotification({
-      message: `Тестовое уведомление отправлено пользователю ${selectedTestUser.value.name}`,
-      type: 'success'
-    })
   } catch (error) {
     console.error('Error sending test notification:', error)
-    notifications.addNotification({
-      message: 'Ошибка отправки тестового уведомления: ' + (error.message || 'Неизвестная ошибка'),
-      type: 'error'
-    })
   } finally {
     loading.value = false
   }
@@ -466,16 +437,8 @@ const performCancelNotification = async (notification) => {
     loading.value = true
     await ApiService.deleteNotification(notification.id || notification._id)
     await loadHistory()
-    notifications.addNotification({
-      message: 'Уведомление отменено',
-      type: 'success'
-    })
   } catch (error) {
     console.error('Error canceling notification:', error)
-    notifications.addNotification({
-      message: 'Ошибка при отмене уведомления',
-      type: 'error'
-    })
   } finally {
     loading.value = false
   }

@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, inject } from "vue";
+import { ref, defineProps, defineEmits } from "vue";
 import { useGameStore } from "@/stores/gameStore";
 import { useTelegram } from "@/composables/useTelegram";
 import axios from "axios";
@@ -81,8 +81,6 @@ const emit = defineEmits(["close", "activate"]);
 
 const store = useGameStore();
 const { user } = useTelegram();
-const notifications = inject("notifications");
-
 // Проверка доступности продукта
 const isProductAvailable = (product) => {
   return store.passiveIncome >= product.requiredIncome;
@@ -100,20 +98,10 @@ const activateProduct = async () => {
   const product = props.product;
 
   if (product.claimed) {
-    notifications.addNotification({
-      message: "Вы уже активировали этот продукт",
-      type: "info",
-    });
     return;
   }
 
   if (!isProductAvailable(product)) {
-    notifications.addNotification({
-      message: `Необходим пассивный доход ${formatMoney(
-        product.requiredIncome
-      )} в месяц`,
-      type: "error",
-    });
     return;
   }
 
@@ -128,10 +116,6 @@ const activateProduct = async () => {
     : null;
 
   if (!userData) {
-    notifications.addNotification({
-      message: "Ошибка: не удалось получить данные пользователя",
-      type: "error",
-    });
     return;
   }
 
@@ -148,14 +132,6 @@ const activateProduct = async () => {
     });
 
     if (response.data.success) {
-      // Показываем уведомление пользователю
-      notifications.addNotification({
-        message:
-          "Продукт активирован! Наши менеджеры свяжутся с вами в ближайшее время.",
-        type: "success",
-        duration: 5000,
-      });
-
       // Сообщаем родительскому компоненту, что продукт активирован
       emit("activate", { ...product, claimed: true });
 
@@ -163,18 +139,9 @@ const activateProduct = async () => {
       setTimeout(() => {
         closeModal();
       }, 1500);
-    } else {
-      notifications.addNotification({
-        message: "Ошибка активации продукта",
-        type: "error",
-      });
     }
   } catch (error) {
     console.error("Ошибка активации продукта:", error);
-    notifications.addNotification({
-      message: "Не удалось отправить заявку на активацию продукта",
-      type: "error",
-    });
   }
 };
 

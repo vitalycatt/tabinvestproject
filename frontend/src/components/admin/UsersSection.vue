@@ -364,14 +364,12 @@
 
 <script setup>
 import { updateUserBalance } from "@/services/apiService";
-import { computed, inject, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { ApiService } from "../../services/apiService";
 import BaseButton from "../ui/BaseButton.vue";
 import BaseCard from "../ui/BaseCard.vue";
 import BaseModal from "../ui/BaseModal.vue";
 import LoadingSpinner from "../ui/LoadingSpinner.vue";
-
-const notifications = inject("notifications");
 
 // Состояние
 const loading = ref(true);
@@ -603,17 +601,9 @@ const loadUsers = async () => {
     } else {
       console.error("Unexpected response format:", response);
       users.value = [];
-      notifications.addNotification({
-        message: "Неверный формат данных пользователей",
-        type: "error",
-      });
     }
   } catch (error) {
     console.error("Error loading users:", error);
-    notifications.addNotification({
-      message: "Ошибка при загрузке пользователей",
-      type: "error",
-    });
   } finally {
     loading.value = false;
   }
@@ -666,10 +656,6 @@ const viewUserDetails = async (user) => {
     showUserModal.value = true;
   } catch (error) {
     console.error("Error loading user details:", error);
-    notifications.addNotification({
-      message: "Ошибка при загрузке данных пользователя",
-      type: "error",
-    });
   } finally {
     loading.value = false;
   }
@@ -699,16 +685,8 @@ const resetUserProgress = async (user) => {
         selectedUser.value = { ...updatedUser };
       }
 
-      notifications.addNotification({
-        message: "Прогресс пользователя успешно сброшен",
-        type: "success",
-      });
     } catch (error) {
       console.error("Error resetting user progress:", error);
-      notifications.addNotification({
-        message: "Ошибка при сбросе прогресса пользователя",
-        type: "error",
-      });
     } finally {
       loading.value = false;
     }
@@ -734,18 +712,8 @@ const toggleUserBlock = async (user) => {
       selectedUser.value = { ...updatedUser };
     }
 
-    notifications.addNotification({
-      message: `Пользователь ${
-        updatedUser.blocked ? "заблокирован" : "разблокирован"
-      }`,
-      type: "success",
-    });
   } catch (error) {
     console.error("Error toggling user block:", error);
-    notifications.addNotification({
-      message: "Ошибка при изменении статуса блокировки пользователя",
-      type: "error",
-    });
   } finally {
     loading.value = false;
   }

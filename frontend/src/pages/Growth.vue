@@ -1,20 +1,20 @@
 <!-- src/pages/Growth.vue -->
 <template>
   <div class="growth-page">
-    <Header/>
+    <Header />
 
     <div class="main__container">
-      <Balance/>
+      <Balance />
 
       <div class="investments-container">
         <!-- Табы категорий -->
         <div class="investment-tabs">
           <button
-              v-for="category in categories"
-              :key="category.id"
-              :class="{ active: currentCategory === category.id }"
-              class="tab"
-              @click="currentCategory = category.id"
+            v-for="category in categories"
+            :key="category.id"
+            :class="{ active: currentCategory === category.id }"
+            class="tab"
+            @click="currentCategory = category.id"
           >
             {{ category.title }}
           </button>
@@ -29,7 +29,10 @@
         <!-- Ошибка загрузки -->
         <div v-else-if="error" class="error-container">
           <p>{{ error }}</p>
-          <button class="retry-button" @click="loadInvestments(currentCategory)">
+          <button
+            class="retry-button"
+            @click="loadInvestments(currentCategory)"
+          >
             Повторить загрузку
           </button>
         </div>
@@ -37,14 +40,17 @@
         <!-- Сетка инвестиций -->
         <div v-else class="investment-grid">
           <div
-              v-for="investment in currentInvestments"
-              :key="investment._id || investment.id"
-              :class="{ disabled: !canBuyInvestment(investment) }"
-              class="investment-card"
-              @click="handleInvestment(investment)"
+            v-for="investment in currentInvestments"
+            :key="investment._id || investment.id"
+            :class="{ disabled: !canBuyInvestment(investment) }"
+            class="investment-card"
+            @click="handleInvestment(investment)"
           >
             <div class="card-image">
-              <img :alt="investment.name" :src="getInvestmentImageUrl(investment)">
+              <img
+                :alt="investment.name"
+                :src="getInvestmentImageUrl(investment)"
+              />
             </div>
             <div class="card-info">
               <h3>{{ investment.name }}</h3>
@@ -52,234 +58,234 @@
               <div class="income-info">
                 <div>Пассивный доход в месяц</div>
                 <div class="income-amount">
-                  <img alt="coin" class="passive__income_cart" src="../assets/images/coin.png">
+                  <img
+                    alt="coin"
+                    class="passive__income_cart"
+                    src="../assets/images/coin.png"
+                  />
                   <span>+{{ investment.nextIncome.toFixed(2) }}</span>
                 </div>
               </div>
-
             </div>
 
             <div class="card-footer">
               <div class="level">lvl {{ investment.userLevel + 1 }}</div>
               <div class="price">
-                <img alt="coin" class="price_cart" src="../assets/images/coin.png">
+                <img
+                  alt="coin"
+                  class="price_cart"
+                  src="../assets/images/coin.png"
+                />
                 <span>{{ investment.nextCost }}</span>
               </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
 
-    <Navigation/>
+    <Navigation />
   </div>
 </template>
 
 <script setup>
-import {inject, onMounted, ref, watch} from 'vue'
-import {useGameStore} from '@/stores/gameStore'
-import {ApiService} from '@/services/apiService'
-import Header from '@/components/layout/Header.vue'
-import Balance from '@/components/game/Balance.vue'
-import Navigation from '@/components/layout/Navigation.vue'
+import { inject, onMounted, ref, watch } from "vue";
+import { useGameStore } from "@/stores/gameStore";
+import { ApiService } from "@/services/apiService";
+import Header from "@/components/layout/Header.vue";
+import Balance from "@/components/game/Balance.vue";
+import Navigation from "@/components/layout/Navigation.vue";
 
-const store = useGameStore()
-const notifications = inject('notifications')
-const logger = inject('logger', {
-  log: (...args) => console.log('[Growth]', ...args),
-  error: (...args) => console.error('[Growth Error]', ...args)
-})
+const store = useGameStore();
+const logger = inject("logger", {
+  log: (...args) => console.log("[Growth]", ...args),
+  error: (...args) => console.error("[Growth Error]", ...args),
+});
 
-const currentCategory = ref('finances')
-const currentInvestments = ref([])
-const purchasedInvestments = ref({}) // Локальное отслеживание купленных инвестиций
-const investmentCosts = ref({}) // Локальное отслеживание стоимости инвестиций
-const loading = ref(false)
-const error = ref(null)
+const currentCategory = ref("finances");
+const currentInvestments = ref([]);
+const purchasedInvestments = ref({}); // Локальное отслеживание купленных инвестиций
+const investmentCosts = ref({}); // Локальное отслеживание стоимости инвестиций
+const loading = ref(false);
+const error = ref(null);
 
 // Категории инвестиций
 const categories = [
-  {id: 'finances', title: 'Финансы'},
-  {id: 'technology', title: 'Технологии'},
-  {id: 'business', title: 'Бизнес'},
-  {id: 'realestate', title: 'Недвижимость'}
-]
+  { id: "finances", title: "Финансы" },
+  { id: "technology", title: "Технологии" },
+  { id: "business", title: "Бизнес" },
+  { id: "realestate", title: "Недвижимость" },
+];
 
 // Загрузка инвестиций с сервера по категории
 const loadInvestments = async (category) => {
-  loading.value = true
-  error.value = null
+  loading.value = true;
+  error.value = null;
 
   try {
-    logger.log('Загрузка инвестиций для категории:', category)
+    logger.log("Загрузка инвестиций для категории:", category);
 
-    const response = await ApiService.getInvestmentsByCategory(store.currentUser.id, category)
+    const response = await ApiService.getInvestmentsByCategory(
+      store.currentUser.id,
+      category
+    );
 
     if (response && response.success && Array.isArray(response.data)) {
-      currentInvestments.value = response.data
-      logger.log('Инвестиции успешно загружены:', currentInvestments.value.length)
+      currentInvestments.value = response.data;
+      logger.log(
+        "Инвестиции успешно загружены:",
+        currentInvestments.value.length
+      );
     } else {
-      logger.error('Неверный формат ответа API:', response)
+      logger.error("Неверный формат ответа API:", response);
       if (Array.isArray(response)) {
         // Некоторые API могут возвращать массив напрямую
-        currentInvestments.value = response
+        currentInvestments.value = response;
       } else if (response && Array.isArray(response.data)) {
         // Или без флага success
-        currentInvestments.value = response.data
+        currentInvestments.value = response.data;
       } else {
-        throw new Error('Некорректный формат данных от сервера')
+        throw new Error("Некорректный формат данных от сервера");
       }
     }
   } catch (err) {
-    logger.error('Ошибка загрузки инвестиций:', err)
-    error.value = 'Не удалось загрузить инвестиции: ' + (err.message || 'Неизвестная ошибка')
-    currentInvestments.value = []
-
-    if (notifications) {
-      notifications.addNotification({
-        message: 'Ошибка загрузки инвестиций',
-        type: 'error'
-      })
-    }
+    logger.error("Ошибка загрузки инвестиций:", err);
+    error.value =
+      "Не удалось загрузить инвестиции: " +
+      (err.message || "Неизвестная ошибка");
+    currentInvestments.value = [];
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // Получение URL изображения инвестиции
 const getInvestmentImageUrl = (investment) => {
   if (!investment.image) {
     // Возвращаем заглушку, если изображение не указано
-    return '@/assets/images/investments/default.png'
+    return "@/assets/images/investments/default.png";
   }
 
   // Если URL начинается с http, возвращаем как есть
-  if (investment.image.startsWith('http')) {
-    return investment.image
+  if (investment.image.startsWith("http")) {
+    return investment.image;
   }
 
   // Если это относительный путь с uploads
-  if (investment.image.startsWith('/uploads/')) {
-    return ApiService.API_URL + investment.image
+  if (investment.image.startsWith("/uploads/")) {
+    return ApiService.API_URL + investment.image;
   }
 
   // Иначе обрабатываем как локальное изображение из assets
-  return investment.image
-}
+  return investment.image;
+};
 
 // Функция для поиска базовой инвестиции по категории и id
 const findPurchasedInvestment = (category, id) => {
   if (!store.investments || !Array.isArray(store.investments.purchased)) {
-    return null
+    return null;
   }
 
   return store.investments.purchased.find(
-      item => item.type === category && (item.id === id || item._id === id)
-  )
-}
+    (item) => item.type === category && (item.id === id || item._id === id)
+  );
+};
 
 // Получение текущего уровня инвестиции
 const getInvestmentLevel = (investment) => {
-  const key = `${investment.category || currentCategory.value}_${investment._id || investment.id}`
+  const key = `${investment.category || currentCategory.value}_${
+    investment._id || investment.id
+  }`;
 
   // Проверяем в локальном кэше
   if (purchasedInvestments.value[key]) {
-    return purchasedInvestments.value[key]
+    return purchasedInvestments.value[key];
   }
 
   // Ищем в купленных инвестициях
   const purchased = findPurchasedInvestment(
-      investment.category || currentCategory.value,
-      investment._id || investment.id
-  )
+    investment.category || currentCategory.value,
+    investment._id || investment.id
+  );
 
   if (purchased) {
     // Запоминаем в локальном кэше
-    purchasedInvestments.value[key] = purchased.level
-    return purchased.level
+    purchasedInvestments.value[key] = purchased.level;
+    return purchased.level;
   }
 
   // Иначе возвращаем начальный уровень
-  return investment.level || 1
-}
+  return investment.level || 1;
+};
 
 // Получение текущей стоимости инвестиции
 const getInvestmentCost = (investment) => {
-  const key = `${investment.category || currentCategory.value}_${investment._id || investment.id}`
+  const key = `${investment.category || currentCategory.value}_${
+    investment._id || investment.id
+  }`;
 
   // Если инвестиция уже куплена и есть в кэше стоимостей
   if (purchasedInvestments.value[key] && investmentCosts.value[key]) {
-    return investmentCosts.value[key]
+    return investmentCosts.value[key];
   }
 
   // Ищем в купленных инвестициях
   const purchased = findPurchasedInvestment(
-      investment.category || currentCategory.value,
-      investment._id || investment.id
-  )
+    investment.category || currentCategory.value,
+    investment._id || investment.id
+  );
 
   if (purchased && purchased.cost) {
     // Запоминаем в локальном кэше
-    investmentCosts.value[key] = purchased.cost
-    return purchased.cost
+    investmentCosts.value[key] = purchased.cost;
+    return purchased.cost;
   }
 
   // Иначе рассчитываем стоимость для текущего уровня
-  const currentLevel = getInvestmentLevel(investment)
+  const currentLevel = getInvestmentLevel(investment);
   if (currentLevel > (investment.level || 1)) {
-    return calculateCostForLevel(investment, currentLevel)
+    return calculateCostForLevel(investment, currentLevel);
   }
 
   // Или возвращаем базовую стоимость
-  return investment.cost
-}
+  return investment.cost;
+};
 
 // Расчет стоимости для определенного уровня
 const calculateCostForLevel = (investment, level) => {
   // Базовая стоимость
-  const baseCost = investment.cost || 0
+  const baseCost = investment.cost || 0;
   // Коэффициент роста цены
-  const costMultiplier = investment.multiplier || 1.5
+  const costMultiplier = investment.multiplier || 1.5;
 
   // Рассчитываем стоимость: базовая стоимость * (множитель ^ (уровень - базовый уровень))
-  const baseLevel = investment.level || 1
-  const levelDifference = level - baseLevel
+  const baseLevel = investment.level || 1;
+  const levelDifference = level - baseLevel;
 
   if (levelDifference <= 0) {
-    return baseCost
+    return baseCost;
   }
 
-  return Math.round(baseCost * Math.pow(costMultiplier, levelDifference))
-}
+  return Math.round(baseCost * Math.pow(costMultiplier, levelDifference));
+};
 
 // Проверка возможности покупки
 const canBuyInvestment = (investment) => {
-  const cost = getInvestmentCost(investment)
-  return store.balance >= cost
-}
+  const cost = getInvestmentCost(investment);
+  return store.balance >= cost;
+};
 
 // Обработка покупки инвестиции
 const handleInvestment = async (investment) => {
-
-
-  logger.log('handleInvestment called for:', investment.name)
+  logger.log("handleInvestment called for:", investment.name);
 
   try {
-    const currentCost = getInvestmentCost(investment)
-    logger.log('Current cost:', currentCost, 'Current balance:', store.balance)
+    const currentCost = getInvestmentCost(investment);
+    logger.log("Current cost:", currentCost, "Current balance:", store.balance);
 
     if (!canBuyInvestment(investment)) {
-      logger.log('Not enough balance to buy investment')
-      if (notifications && typeof notifications.addNotification === 'function') {
-        notifications.addNotification({
-          message: 'Недостаточно монет',
-          type: 'error'
-        })
-      } else {
-        alert('Недостаточно монет')
-      }
-      return
+      logger.log("Not enough balance to buy investment");
+      return;
     }
 
     // const investmentCopy = {...investment}
@@ -302,70 +308,59 @@ const handleInvestment = async (investment) => {
     // investmentCopy.cost = currentCost
     // investmentCopy.type = category
 
-    logger.log('Before purchase, passiveIncome =', store.passiveIncome || 0)
+    logger.log("Before purchase, passiveIncome =", store.passiveIncome || 0);
     // Передаем только доход за текущую покупку
-    const data = await store.buyInvestment(store.currentUser.id, investment._id)
+    const data = await store.buyInvestment(
+      store.currentUser.id,
+      investment._id
+    );
 
     console.log(data);
 
-    currentInvestments.value = currentInvestments.value.map(invest => invest._id === investment._id ? ({
-      ...invest,
-      nextIncome: data.income,
-      userLevel: data.newLevel,
-      nextCost: data.nextCost
-    }) : invest)
-
-    if (data.success) {
-      notifications.addNotification({
-        message: `Вы приобрели ${investment.name} (Уровень ${data.newLevel})`,
-        type: 'success'
-      })
-    }
-
+    currentInvestments.value = currentInvestments.value.map((invest) =>
+      invest._id === investment._id
+        ? {
+            ...invest,
+            nextIncome: data.income,
+            userLevel: data.newLevel,
+            nextCost: data.nextCost,
+          }
+        : invest
+    );
   } catch (error) {
-    logger.error('Error in handleInvestment:', error)
-    if (notifications && typeof notifications.addNotification === 'function') {
-      notifications.addNotification({
-        message: `Ошибка покупки: ${error.message}`,
-        type: 'error'
-      })
-    } else {
-      alert(`Ошибка покупки: ${error.message}`)
-    }
+    logger.error("Error in handleInvestment:", error);
   }
-}
-
+};
 
 // Форматирование чисел
 const formatMoney = (num) => {
   if (num >= 1000000000) {
-    return (num / 1000000000).toFixed(2) + 'B'
+    return (num / 1000000000).toFixed(2) + "B";
   }
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(2) + 'M'
+    return (num / 1000000).toFixed(2) + "M";
   }
   if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K'
+    return (num / 1000).toFixed(1) + "K";
   }
-  return num.toString()
-}
+  return num.toString();
+};
 
 onMounted(async () => {
-  logger.log('Growth component mounted');
-  logger.log('Current store investments:', store.investments);
+  logger.log("Growth component mounted");
+  logger.log("Current store investments:", store.investments);
 
-  if (typeof store.purchaseInvestment !== 'function') {
-    logger.error('purchaseInvestment is not a function in store!');
-  }
-
-  if (!notifications || typeof notifications.addNotification !== 'function') {
-    logger.error('Notifications system not available or addNotification is not a function!');
+  if (typeof store.purchaseInvestment !== "function") {
+    logger.error("purchaseInvestment is not a function in store!");
   }
 
   if (store.investments && store.investments.purchased) {
-    logger.log('Loading purchased investments:', store.investments.purchased.length);
+    logger.log(
+      "Loading purchased investments:",
+      store.investments.purchased.length
+    );
 
-    store.investments.purchased.forEach(investment => {
+    store.investments.purchased.forEach((investment) => {
       const key = `${investment.type}_${investment._id || investment.id}`;
       purchasedInvestments.value[key] = investment.level;
 
@@ -378,26 +373,33 @@ onMounted(async () => {
   // Загружаем инвестиции текущей категории
   await loadInvestments(currentCategory.value);
 
-
   // ===== Серверное начисление пассивного дохода =====
   async function addPassiveIncomeServer() {
     if (!store.passiveIncome || store.passiveIncome <= 0) return;
 
     try {
-      const res = await ApiService.post(`/user/${store.userId}/addPassiveIncome`, {
-        addedIncome: store.passiveIncome // отправляем именно текущий пассивный доход
-      });
+      const res = await ApiService.post(
+        `/user/${store.userId}/addPassiveIncome`,
+        {
+          addedIncome: store.passiveIncome, // отправляем именно текущий пассивный доход
+        }
+      );
 
       if (res.success) {
         // Добавляем серверно начисленный доход к балансу
-        store.balance += res.added
-        logger.log('Пассивный доход начислен серверно:', res.added, '→ новый баланс:', store.balance)
+        store.balance += res.added;
+        logger.log(
+          "Пассивный доход начислен серверно:",
+          res.added,
+          "→ новый баланс:",
+          store.balance
+        );
 
         // Сбрасываем локальный пассивный доход, чтобы не начислялся повторно
-        store.passiveIncome = 0
+        store.passiveIncome = 0;
       }
     } catch (err) {
-      logger.error('Ошибка при начислении пассивного дохода серверно:', err)
+      logger.error("Ошибка при начислении пассивного дохода серверно:", err);
     }
   }
 
@@ -408,20 +410,18 @@ onMounted(async () => {
   setInterval(addPassiveIncomeServer, 60000);
 });
 
-
 // Добавляем watch после onMounted
 watch(currentCategory, (newCategory) => {
-  logger.log('Категория изменена:', newCategory)
-  loadInvestments(newCategory)
-})
-
+  logger.log("Категория изменена:", newCategory);
+  loadInvestments(newCategory);
+});
 </script>
 
 <style scoped>
 .growth-page {
   min-height: 100vh;
   padding: 100px 0 80px 0;
-  background: url('@/assets/images/bg-2.jpg') center top no-repeat;
+  background: url("@/assets/images/bg-2.jpg") center top no-repeat;
 }
 
 .investments-container {
@@ -455,7 +455,6 @@ watch(currentCategory, (newCategory) => {
 .tab.active {
   background: var(--primary-color);
 }
-
 
 .investment-grid {
   display: grid;
@@ -500,7 +499,6 @@ watch(currentCategory, (newCategory) => {
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
-
 }
 
 .card-info h3 {
@@ -544,14 +542,13 @@ watch(currentCategory, (newCategory) => {
 }
 
 .card-footer::after {
-  content: '';
+  content: "";
   position: absolute;
   left: -10px;
   top: 0;
   height: 1px;
   width: 107%;
   background: rgba(255, 255, 255, 0.1);
-
 }
 
 .level {
@@ -607,7 +604,7 @@ watch(currentCategory, (newCategory) => {
   width: 40px;
   height: 40px;
   border: 4px solid rgba(255, 255, 255, 0.2);
-  border-top-color: var(--primary-color, #8C60E3);
+  border-top-color: var(--primary-color, #8c60e3);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 10px;
@@ -630,7 +627,7 @@ watch(currentCategory, (newCategory) => {
 }
 
 .retry-button {
-  background: var(--primary-color, #8C60E3);
+  background: var(--primary-color, #8c60e3);
   color: white;
   border: none;
   border-radius: 5px;

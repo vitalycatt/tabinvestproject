@@ -193,7 +193,6 @@ const user = ref(
   }
 );
 
-const notifications = inject("notifications");
 const logger = inject("logger", console);
 
 const loading = ref(true);
@@ -329,10 +328,6 @@ const fetchTasks = async () => {
     }
 
     error.value = "Не удалось загрузить задания";
-    notifications?.addNotification({
-      message: "Ошибка загрузки заданий",
-      type: "error",
-    });
   } finally {
     loading.value = false;
     logger.log("[fetchTasks] Завершение загрузки задач. loading = false");
@@ -362,10 +357,6 @@ const handleTaskClick = (task) => {
 
   if (task.completed) {
     logger.log("[handleTaskClick] Задание уже выполнено:", task.title);
-    notifications?.addNotification({
-      message: "Задание уже выполнено",
-      type: "info",
-    });
     return;
   }
 
@@ -420,18 +411,9 @@ const onTaskComplete = async (completedTask) => {
       fetchTasks();
     }, 3000);
 
-    notifications?.addNotification({
-      message: `Задание "${completedTask.title}" отмечено как выполненное.`,
-      type: "success",
-    });
-
     taskModalVisible.value = false;
   } catch (err) {
     logger.error("[onTaskComplete] Ошибка при обработке complete:", err);
-    notifications?.addNotification({
-      message: `Не удалось обновить задание "${completedTask.title}"`,
-      type: "error",
-    });
   }
 };
 

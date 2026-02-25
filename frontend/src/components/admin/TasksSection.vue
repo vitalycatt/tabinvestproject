@@ -209,7 +209,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { ApiService } from '../../services/apiService';
 import BaseCard from '../ui/BaseCard.vue';
 import BaseButton from '../ui/BaseButton.vue';
@@ -218,8 +218,6 @@ import FormGroup from '../ui/FormGroup.vue';
 import BaseModal from '../ui/BaseModal.vue';
 import LoadingSpinner from '../ui/LoadingSpinner.vue';
 import TaskModal from '../admin/modals/TaskModal.vue';
-
-const notifications = inject('notifications');
 
 // Состояние
 const loading = ref(true);
@@ -323,10 +321,6 @@ const loadTasks = async () => {
     }
   } catch (error) {
     console.error('Ошибка загрузки заданий:', error);
-    notifications.addNotification({
-      message: `Ошибка загрузки заданий: ${error.message}`,
-      type: 'error'
-    });
     tasks.value = [];
   } finally {
     loading.value = false;
@@ -353,10 +347,6 @@ const saveTask = async (taskData, isFormData = false) => {
 
     // Проверка обязательных полей для обычного объекта
     if (!isFormData && (!taskData.title || !taskData.description)) {
-      notifications.addNotification({
-        message: 'Название и описание задания обязательны',
-        type: 'warning'
-      });
       return;
     }
 
@@ -391,12 +381,6 @@ const saveTask = async (taskData, isFormData = false) => {
     console.log('Ответ от сервера:', response);
 
     if (response && response.success) {
-      // Успешное создание/обновление
-      notifications.addNotification({
-        message: currentTask.value._id ? 'Задание успешно обновлено' : 'Задание успешно создано',
-        type: 'success'
-      });
-
       showTaskModal.value = false;
       await loadTasks(); // Перезагрузка списка заданий
     } else {
@@ -404,10 +388,6 @@ const saveTask = async (taskData, isFormData = false) => {
     }
   } catch (error) {
     console.error('Ошибка сохранения задания:', error);
-    notifications.addNotification({
-      message: `Ошибка при сохранении задания: ${error.message}`,
-      type: 'error'
-    });
   } finally {
     saving.value = false;
   }
@@ -417,17 +397,9 @@ const deleteTask = async (task) => {
   if (confirm(`Вы действительно хотите удалить задание "${task.title}"?`)) {
     try {
       await ApiService.deleteTask(task.id);
-      notifications.addNotification({
-        message: 'Задание успешно удалено',
-        type: 'success'
-      });
       await loadTasks();
     } catch (error) {
       console.error('Error deleting task:', error);
-      notifications.addNotification({
-        message: 'Ошибка при удалении задания',
-        type: 'error'
-      });
     }
   }
 };
@@ -438,18 +410,9 @@ const toggleTaskStatus = async (task) => {
       active: !task.active
     });
 
-    notifications.addNotification({
-      message: `Задание ${task.active ? 'деактивировано' : 'активировано'}`,
-      type: 'success'
-    });
-
     await loadTasks();
   } catch (error) {
     console.error('Error toggling task status:', error);
-    notifications.addNotification({
-      message: 'Ошибка при изменении статуса задания',
-      type: 'error'
-    });
   }
 };
 

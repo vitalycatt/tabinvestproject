@@ -161,7 +161,6 @@ const store = useGameStore();
 const { tg, user } = useTelegram();
 const api = useApi();
 const logger = inject("logger", console);
-const notifications = inject("notifications");
 
 // Состояние загрузки
 const loading = ref(true);
@@ -236,16 +235,6 @@ const loadReferrals = async () => {
     if (data.success && Array.isArray(data.data)) {
       friends.value = data.data;
       logger.log("Обновлен список друзей:", friends.value);
-
-      // Показываем уведомление если найдены новые рефералы
-      if (friends.value.length > 0) {
-        notifications.addNotification({
-          message: `У вас ${friends.value.length} ${getRefCountText(
-            friends.value.length
-          )}!`,
-          type: "success",
-        });
-      }
     } else {
       logger.error("Неверный формат данных в ответе API:", data);
       apiError.value = "Неверный формат данных в ответе API";
@@ -261,11 +250,6 @@ const loadReferrals = async () => {
   } catch (error) {
     logger.error("Ошибка загрузки рефералов:", error);
     apiError.value = error.message || "Ошибка при загрузке рефералов";
-
-    notifications.addNotification({
-      message: "Ошибка при загрузке рефералов",
-      type: "error",
-    });
   } finally {
     loading.value = false;
     refreshing.value = false;
@@ -334,23 +318,12 @@ const checkRewardsProgress = () => {
 // Обработка получения награды
 const handleRewardClaim = async (reward) => {
   if (reward.completed) {
-    notifications.addNotification({
-      message: "Вы уже получили эту награду",
-      type: "info",
-    });
     return;
   }
 
   if (!reward.available) {
     const unclaimedCount = friends.value.filter((f) => !f.rewardClaimed).length;
     const remainingNeeded = reward.count - unclaimedCount;
-
-    notifications.addNotification({
-      message: `Пригласите ещё ${remainingNeeded} ${getRefCountText(
-        remainingNeeded
-      )}`,
-      type: "warning",
-    });
     return;
   }
 
@@ -374,19 +347,10 @@ const handleRewardClaim = async (reward) => {
     reward.completed = true;
     reward.available = false;
 
-    notifications.addNotification({
-      message: `Получено ${reward.amount}K монет!`,
-      type: "reward",
-    });
-
     // Обновляем список рефералов
     await loadReferrals();
   } catch (error) {
     logger.error("Ошибка получения награды:", error);
-    notifications.addNotification({
-      message: "Ошибка при получении награды",
-      type: "error",
-    });
   }
 };
 
@@ -394,10 +358,6 @@ const handleRewardClaim = async (reward) => {
 const inviteFriend = () => {
   if (!user.value) {
     logger.log("Нет доступного пользователя для приглашения");
-    notifications.addNotification({
-      message: "Ошибка: пользователь не авторизован",
-      type: "error",
-    });
     return;
   }
 
@@ -414,10 +374,6 @@ const inviteFriend = () => {
     window.open(shareUrl, "_blank");
   } else {
     navigator.clipboard.writeText(message);
-    notifications.addNotification({
-      message: "Ссылка скопирована в буфер обмена",
-      type: "success",
-    });
   }
 };
 

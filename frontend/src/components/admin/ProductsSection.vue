@@ -258,7 +258,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { ApiService } from '../../services/apiService';
 import BaseCard from '../ui/BaseCard.vue';
 import BaseButton from '../ui/BaseButton.vue';
@@ -267,8 +267,6 @@ import FormGroup from '../ui/FormGroup.vue';
 import BaseModal from '../ui/BaseModal.vue';
 import LoadingSpinner from '../ui/LoadingSpinner.vue';
 import ProductModal from '../admin/modals/ProductModal.vue';
-
-const notifications = inject('notifications');
 
 // Состояние
 const loading = ref(true);
@@ -391,10 +389,6 @@ const loadProducts = async () => {
     }
   } catch (error) {
     console.error('Ошибка загрузки продуктов:', error);
-    notifications.addNotification({
-      message: `Ошибка загрузки продуктов: ${error.message}`,
-      type: 'error'
-    });
     products.value = [];
   } finally {
     loading.value = false;
@@ -419,10 +413,6 @@ const loadRecentClaims = async () => {
     }
   } catch (error) {
     console.error('Ошибка загрузки последних заявок:', error);
-    notifications.addNotification({
-      message: 'Ошибка при загрузке последних заявок',
-      type: 'error'
-    });
     recentClaims.value = [];
   }
 };
@@ -445,10 +435,6 @@ const saveProduct = async (productData, isFormData = false) => {
 
     // Проверка обязательных полей для обычного объекта
     if (!isFormData && (!productData.name || !productData.description)) {
-      notifications.addNotification({
-        message: 'Название и описание продукта обязательны',
-        type: 'warning'
-      });
       return;
     }
 
@@ -483,12 +469,6 @@ const saveProduct = async (productData, isFormData = false) => {
     console.log('Ответ от сервера:', response);
 
     if (response && response.success) {
-      // Успешное создание/обновление
-      notifications.addNotification({
-        message: currentProduct.value._id ? 'Продукт успешно обновлен' : 'Продукт успешно создан',
-        type: 'success'
-      });
-
       showProductModal.value = false;
       await loadProducts(); // Перезагрузка списка продуктов
     } else {
@@ -496,10 +476,6 @@ const saveProduct = async (productData, isFormData = false) => {
     }
   } catch (error) {
     console.error('Ошибка сохранения продукта:', error);
-    notifications.addNotification({
-      message: `Ошибка при сохранении продукта: ${error.message}`,
-      type: 'error'
-    });
   } finally {
     saving.value = false;
   }
@@ -511,17 +487,9 @@ const deleteProduct = async (product) => {
       loading.value = true;
       const productId = product._id || product.id;
       await ApiService.deleteProduct(productId);
-      notifications.addNotification({
-        message: 'Продукт успешно удален',
-        type: 'success'
-      });
       await loadProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
-      notifications.addNotification({
-        message: 'Ошибка при удалении продукта',
-        type: 'error'
-      });
     } finally {
       loading.value = false;
     }
@@ -536,18 +504,9 @@ const toggleProductStatus = async (product) => {
       active: !product.active
     });
 
-    notifications.addNotification({
-      message: `Продукт ${product.active ? 'деактивирован' : 'активирован'}`,
-      type: 'success'
-    });
-
     await loadProducts();
   } catch (error) {
     console.error('Error toggling product status:', error);
-    notifications.addNotification({
-      message: 'Ошибка при изменении статуса продукта',
-      type: 'error'
-    });
   } finally {
     loading.value = false;
   }
@@ -576,10 +535,6 @@ const viewProductClaims = async (product) => {
     showClaimsModal.value = true;
   } catch (error) {
     console.error('Error loading product claims:', error);
-    notifications.addNotification({
-      message: 'Ошибка при загрузке заявок на продукт',
-      type: 'error'
-    });
     productClaims.value = [];
   } finally {
     loading.value = false;
@@ -599,11 +554,6 @@ const updateClaimStatus = async (claim) => {
 
     await ApiService.updateClaimStatus(claimId, claim.status, { note: claim.note || '' });
 
-    notifications.addNotification({
-      message: 'Статус заявки успешно обновлен',
-      type: 'success'
-    });
-
     // Обновляем список заявок
     await loadRecentClaims();
 
@@ -622,10 +572,6 @@ const updateClaimStatus = async (claim) => {
     await loadProducts();
   } catch (error) {
     console.error('Error updating claim status:', error);
-    notifications.addNotification({
-      message: 'Ошибка при обновлении статуса заявки: ' + error.message,
-      type: 'error'
-    });
   } finally {
     loading.value = false;
   }
@@ -663,18 +609,9 @@ const saveClaimNote = async () => {
       productClaims.value[productClaimIndex].note = currentNote.value;
     }
 
-    notifications.addNotification({
-      message: 'Примечание к заявке сохранено',
-      type: 'success'
-    });
-
     showNoteModal.value = false;
   } catch (error) {
     console.error('Error saving claim note:', error);
-    notifications.addNotification({
-      message: 'Ошибка при сохранении примечания к заявке',
-      type: 'error'
-    });
   } finally {
     loading.value = false;
   }
@@ -682,10 +619,6 @@ const saveClaimNote = async () => {
 
 const openChat = (claim) => {
   if (!claim.userData?.telegramId && !claim.userId) {
-    notifications.addNotification({
-      message: 'Невозможно открыть чат, ID пользователя недоступен',
-      type: 'error'
-    });
     return;
   }
 

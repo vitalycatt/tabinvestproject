@@ -3,7 +3,11 @@
   <div class="boost-page">
     <!-- Кнопка возврата -->
     <div class="back-button" @click="$router.push('/')">
-      <img src="@/assets/images/left-arrow.svg" alt="Назад" class="back-arrow">
+      <img
+        src="@/assets/images/left-arrow.svg"
+        alt="Назад"
+        class="back-arrow"
+      />
     </div>
 
     <div class="boost-area">
@@ -13,20 +17,32 @@
       <div class="boost-options">
         <h3>Бесплатные ежедневные усилители</h3>
         <div class="boost-option" @click="handleFullEnergy">
-          <img src="@/assets/images/energy.png" alt="Energy" class="boost-icon">
+          <img
+            src="@/assets/images/energy.png"
+            alt="Energy"
+            class="boost-icon"
+          />
           <div class="boost-content">
             <div class="boost-name">Полная энергия</div>
-            <div class="boost-available">Доступно {{ dailyBoosts.fullEnergy }}/6</div>
+            <div class="boost-available">
+              Доступно {{ dailyBoosts.fullEnergy }}/6
+            </div>
           </div>
         </div>
 
         <h3>Усилители</h3>
         <!-- Мультитап x3 -->
         <div class="boost-option" @click="handleBoost('tap3x', 8000)">
-          <img src="@/assets/images/finger.png" alt="Multitap" class="boost-icon">
+          <img
+            src="@/assets/images/finger.png"
+            alt="Multitap"
+            class="boost-icon"
+          />
           <div class="boost-content">
             <div class="boost-name">Мультитап</div>
-            <div class="boost-description">Увеличить количество монет за нажатие до 3</div>
+            <div class="boost-description">
+              Увеличить количество монет за нажатие до 3
+            </div>
             <div class="boost-cost">
               <CoinIcon />
               <span>8K</span>
@@ -36,10 +52,16 @@
 
         <!-- Мультитап x5 -->
         <div class="boost-option" @click="handleBoost('tap5x', 25000)">
-          <img src="@/assets/images/finger.png" alt="Multitap" class="boost-icon">
+          <img
+            src="@/assets/images/finger.png"
+            alt="Multitap"
+            class="boost-icon"
+          />
           <div class="boost-content">
             <div class="boost-name">Мультитап</div>
-            <div class="boost-description">Увеличить количество монет за нажатие до 5</div>
+            <div class="boost-description">
+              Увеличить количество монет за нажатие до 5
+            </div>
             <div class="boost-cost">
               <CoinIcon />
               <span>25K</span>
@@ -49,10 +71,16 @@
 
         <!-- Увеличение энергии до 3000 -->
         <div class="boost-option" @click="handleEnergyUpgrade(3000, 5000)">
-          <img src="@/assets/images/Battery.png" alt="Energy Limit" class="boost-icon">
+          <img
+            src="@/assets/images/Battery.png"
+            alt="Energy Limit"
+            class="boost-icon"
+          />
           <div class="boost-content">
             <div class="boost-name">Лимит энергии</div>
-            <div class="boost-description">Увеличить максимальную энергию до 3000</div>
+            <div class="boost-description">
+              Увеличить максимальную энергию до 3000
+            </div>
             <div class="boost-cost">
               <CoinIcon />
               <span>5K</span>
@@ -62,10 +90,16 @@
 
         <!-- Увеличение энергии до 5000 -->
         <div class="boost-option" @click="handleEnergyUpgrade(5000, 10000)">
-          <img src="@/assets/images/Battery.png" alt="Energy Limit" class="boost-icon">
+          <img
+            src="@/assets/images/Battery.png"
+            alt="Energy Limit"
+            class="boost-icon"
+          />
           <div class="boost-content">
             <div class="boost-name">Лимит энергии</div>
-            <div class="boost-description">Увеличить максимальную энергию до 5000</div>
+            <div class="boost-description">
+              Увеличить максимальную энергию до 5000
+            </div>
             <div class="boost-cost">
               <CoinIcon />
               <span>10K</span>
@@ -80,125 +114,93 @@
 </template>
 
 <script setup>
-import { ref, inject, onMounted } from 'vue'
-import { useGameStore } from '@/stores/gameStore'
-import Balance from '@/components/game/Balance.vue'
-import Navigation from '@/components/layout/Navigation.vue'
-import CoinIcon from '@/components/ui/CoinIcon.vue'
+import { ref, onMounted } from "vue";
+import { useGameStore } from "@/stores/gameStore";
+import Balance from "@/components/game/Balance.vue";
+import Navigation from "@/components/layout/Navigation.vue";
+import CoinIcon from "@/components/ui/CoinIcon.vue";
 
-const store = useGameStore()
-const notifications = inject('notifications')
+const store = useGameStore();
 
 // Состояние ежедневных бустов
 const dailyBoosts = ref({
   fullEnergy: 6,
-  lastReset: null
-})
+  lastReset: null,
+});
 
 // Загрузка состояния ежедневных бустов
 onMounted(() => {
-  const saved = localStorage.getItem('dailyBoosts')
+  const saved = localStorage.getItem("dailyBoosts");
   if (saved) {
-    const parsed = JSON.parse(saved)
-    const lastReset = new Date(parsed.lastReset)
-    const now = new Date()
+    const parsed = JSON.parse(saved);
+    const lastReset = new Date(parsed.lastReset);
+    const now = new Date();
 
     // Сброс бустов в начале нового дня
     if (lastReset.getDate() !== now.getDate()) {
-      resetDailyBoosts()
+      resetDailyBoosts();
     } else {
-      dailyBoosts.value = parsed
+      dailyBoosts.value = parsed;
     }
   }
-})
+});
 
 // Сброс ежедневных бустов
 const resetDailyBoosts = () => {
   dailyBoosts.value = {
     fullEnergy: 6,
-    lastReset: new Date().toISOString()
-  }
-  saveDailyBoosts()
-}
+    lastReset: new Date().toISOString(),
+  };
+  saveDailyBoosts();
+};
 
 // Сохранение состояния ежедневных бустов
 const saveDailyBoosts = () => {
-  localStorage.setItem('dailyBoosts', JSON.stringify(dailyBoosts.value))
-}
+  localStorage.setItem("dailyBoosts", JSON.stringify(dailyBoosts.value));
+};
 
 // Обработка полного восстановления энергии
 const handleFullEnergy = () => {
   if (dailyBoosts.value.fullEnergy <= 0) {
-    notifications.addNotification({
-      message: 'Нет доступных восстановлений энергии',
-      type: 'error'
-    })
-    return
+    return;
   }
 
-  store.energy.current = store.energy.max
-  dailyBoosts.value.fullEnergy--
-  saveDailyBoosts()
-
-  notifications.addNotification({
-    message: 'Энергия восстановлена!',
-    type: 'success'
-  })
-}
+  store.energy.current = store.energy.max;
+  dailyBoosts.value.fullEnergy--;
+  saveDailyBoosts();
+};
 
 // Обработка покупки буста
 const handleBoost = (type, cost) => {
   if (store.balance < cost) {
-    notifications.addNotification({
-      message: 'Недостаточно монет',
-      type: 'error'
-    })
-    return
+    return;
   }
 
-  store.balance -= cost
-  const duration = 24 * 60 * 60 * 1000 // 24 часа
-  store.applyBoost(type, duration)
-
-  notifications.addNotification({
-    message: `Буст х${type === 'tap3x' ? '3' : '5'} активирован на 24 часа!`,
-    type: 'success'
-  })
-}
+  store.balance -= cost;
+  const duration = 24 * 60 * 60 * 1000; // 24 часа
+  store.applyBoost(type, duration);
+};
 
 // Обработка улучшения максимальной энергии
 const handleEnergyUpgrade = (newMax, cost) => {
   if (store.balance < cost) {
-    notifications.addNotification({
-      message: 'Недостаточно монет',
-      type: 'error'
-    })
-    return
+    return;
   }
 
   if (store.energy.max >= newMax) {
-    notifications.addNotification({
-      message: 'У вас уже есть это улучшение',
-      type: 'error'
-    })
-    return
+    return;
   }
 
-  store.balance -= cost
-  store.upgradeEnergy(newMax)
-
-  notifications.addNotification({
-    message: `Максимальная энергия увеличена до ${newMax}!`,
-    type: 'success'
-  })
-}
+  store.balance -= cost;
+  store.upgradeEnergy(newMax);
+};
 </script>
 
 <style scoped>
 .boost-page {
   min-height: 100vh;
   padding: 1rem;
-  background: url('@/assets/images/bg.jpg') center top / cover no-repeat;
+  background: url("@/assets/images/bg.jpg") center top / cover no-repeat;
 }
 
 .back-button {

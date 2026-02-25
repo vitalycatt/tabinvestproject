@@ -10,7 +10,6 @@
 
     <div class="section-content">
       <div class="investments-layout">
-
         <!-- Статистика по инвестициям -->
         <BaseCard class="investments-stats">
           <h3>Статистика инвестиций</h3>
@@ -53,10 +52,10 @@
                 <option value="inactive">Неактивные</option>
               </select>
               <input
-                  type="text"
-                  v-model="searchQuery"
-                  placeholder="Поиск..."
-                  class="form-input"
+                type="text"
+                v-model="searchQuery"
+                placeholder="Поиск..."
+                class="form-input"
               />
             </div>
           </div>
@@ -70,46 +69,70 @@
           <div v-else class="investments-table">
             <table>
               <thead>
-              <tr>
-                <th>ID</th>
-                <th>Название</th>
-                <th>Категория</th>
-                <th>Доход</th>
-                <th>Цена</th>
-                <th>Тип</th>
-                <th>Статус</th>
-                <th>Действия</th>
-              </tr>
+                <tr>
+                  <th>ID</th>
+                  <th>Название</th>
+                  <th>Категория</th>
+                  <th>Доход</th>
+                  <th>Цена</th>
+                  <th>Тип</th>
+                  <th>Статус</th>
+                  <th>Действия</th>
+                </tr>
               </thead>
               <tbody>
-              <tr v-for="investment in filteredInvestments" :key="investment._id">
-                <td>{{ investment._id }}</td>
-                <td>{{ investment.name }}</td>
-                <td>{{ getCategoryName(investment.category) }}</td>
-                <td>{{ formatMoney(investment.baseIncome) }}</td>
-                <td>{{ formatMoney(investment.cost) }}</td>
-                <td>{{ getInvestmentType(investment.type) }}</td>
-                <td>
-                    <span :class="['status-badge', investment.active ? 'active' : 'inactive']">
-                      {{ investment.active ? 'Активна' : 'Неактивна' }}
+                <tr
+                  v-for="investment in filteredInvestments"
+                  :key="investment._id"
+                >
+                  <td>{{ investment._id }}</td>
+                  <td>{{ investment.name }}</td>
+                  <td>{{ getCategoryName(investment.category) }}</td>
+                  <td>{{ formatMoney(investment.baseIncome) }}</td>
+                  <td>{{ formatMoney(investment.cost) }}</td>
+                  <td>{{ getInvestmentType(investment.type) }}</td>
+                  <td>
+                    <span
+                      :class="[
+                        'status-badge',
+                        investment.active ? 'active' : 'inactive',
+                      ]"
+                    >
+                      {{ investment.active ? "Активна" : "Неактивна" }}
                     </span>
-                </td>
-                <td class="actions">
-                  <button class="action-btn edit" @click="openInvestmentModal(investment)" title="Редактировать">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="action-btn delete" @click="deleteInvestment(investment)" title="Удалить">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                  <button
+                  </td>
+                  <td class="actions">
+                    <button
+                      class="action-btn edit"
+                      @click="openInvestmentModal(investment)"
+                      title="Редактировать"
+                    >
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button
+                      class="action-btn delete"
+                      @click="deleteInvestment(investment)"
+                      title="Удалить"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </button>
+                    <button
                       class="action-btn toggle"
                       @click="toggleInvestmentStatus(investment)"
-                      :title="investment.active ? 'Деактивировать' : 'Активировать'"
-                  >
-                    <i :class="investment.active ? 'fas fa-times-circle' : 'fas fa-check-circle'"></i>
-                  </button>
-                </td>
-              </tr>
+                      :title="
+                        investment.active ? 'Деактивировать' : 'Активировать'
+                      "
+                    >
+                      <i
+                        :class="
+                          investment.active
+                            ? 'fas fa-times-circle'
+                            : 'fas fa-check-circle'
+                        "
+                      ></i>
+                    </button>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -118,47 +141,45 @@
     </div>
 
     <InvestmentModal
-        v-if="showInvestmentModal"
-        :investment="currentInvestment"
-        @close="showInvestmentModal = false"
-        @save="saveInvestment"
+      v-if="showInvestmentModal"
+      :investment="currentInvestment"
+      @close="showInvestmentModal = false"
+      @save="saveInvestment"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue';
-import { ApiService } from '@/services/apiService'
-import BaseCard from '../ui/BaseCard.vue';
-import BaseButton from '../ui/BaseButton.vue';
-import LoadingSpinner from '../ui/LoadingSpinner.vue';
-import InvestmentModal from '../admin/modals/InvestmentModal.vue';
-
-const notifications = inject('notifications');
+import { ref, computed, onMounted } from "vue";
+import { ApiService } from "@/services/apiService";
+import BaseCard from "../ui/BaseCard.vue";
+import BaseButton from "../ui/BaseButton.vue";
+import LoadingSpinner from "../ui/LoadingSpinner.vue";
+import InvestmentModal from "../admin/modals/InvestmentModal.vue";
 
 // Состояние
 const loading = ref(true);
 const saving = ref(false);
 const investments = ref([]);
 const showInvestmentModal = ref(false);
-const filterCategory = ref('all');
-const filterStatus = ref('all');
-const searchQuery = ref('');
+const filterCategory = ref("all");
+const filterStatus = ref("all");
+const searchQuery = ref("");
 
 // Модель инвестиции
 const defaultInvestment = {
-  name: '',
-  category: 'finances',
+  name: "",
+  category: "finances",
   baseIncome: 0,
   cost: 0,
   level: 1,
   multiplier: 1.2,
-  type: 'linear',
+  type: "linear",
   active: true,
-  image: '',
-  description: '',
+  image: "",
+  description: "",
   order: 0,
-  bonus_percent: 0
+  bonus_percent: 0,
 };
 
 const currentInvestment = ref({ ...defaultInvestment });
@@ -168,20 +189,23 @@ const filteredInvestments = computed(() => {
   let result = investments.value;
 
   // Фильтрация по категории
-  if (filterCategory.value !== 'all') {
-    result = result.filter(investment => investment.category === filterCategory.value);
+  if (filterCategory.value !== "all") {
+    result = result.filter(
+      (investment) => investment.category === filterCategory.value
+    );
   }
 
   // Фильтрация по статусу
-  if (filterStatus.value !== 'all') {
-    const isActive = filterStatus.value === 'active';
-    result = result.filter(investment => investment.active === isActive);
+  if (filterStatus.value !== "all") {
+    const isActive = filterStatus.value === "active";
+    result = result.filter((investment) => investment.active === isActive);
   }
 
   // Поиск по названию
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    result = result.filter(investment =>
+    result = result.filter(
+      (investment) =>
         investment.name?.toLowerCase().includes(query) ||
         investment.description?.toLowerCase().includes(query)
     );
@@ -199,18 +223,21 @@ const filteredInvestments = computed(() => {
 });
 
 const activeInvestmentsCount = computed(() => {
-  return investments.value.filter(i => i.active).length;
+  return investments.value.filter((i) => i.active).length;
 });
 
 const categoriesCount = computed(() => {
-  const categories = new Set(investments.value.map(i => i.category));
+  const categories = new Set(investments.value.map((i) => i.category));
   return categories.size;
 });
 
 const avgIncome = computed(() => {
   if (investments.value.length === 0) return 0;
 
-  const totalIncome = investments.value.reduce((sum, i) => sum + (i.baseIncome || 0), 0);
+  const totalIncome = investments.value.reduce(
+    (sum, i) => sum + (i.baseIncome || 0),
+    0
+  );
   return formatMoney(totalIncome / investments.value.length);
 });
 
@@ -218,15 +245,15 @@ const avgIncome = computed(() => {
 const loadInvestments = async () => {
   try {
     loading.value = true;
-    console.log('Загрузка инвестиций...');
+    console.log("Загрузка инвестиций...");
 
     const response = await ApiService.getInvestments();
-    console.log('Ответ от сервера:', response);
+    console.log("Ответ от сервера:", response);
 
     if (response && response.success && response.data) {
-      investments.value = response.data.map(investment => {
+      investments.value = response.data.map((investment) => {
         // Проверяем, если изображение не содержит полный URL
-        if (investment.image && !investment.image.startsWith('http')) {
+        if (investment.image && !investment.image.startsWith("http")) {
           // Добавляем префикс к имени файла
           investment.imageUrl = `${ApiService.API_URL}${investment.image}`;
         } else {
@@ -235,19 +262,15 @@ const loadInvestments = async () => {
 
         return {
           ...investment,
-          id: investment._id // Добавляем id для совместимости с фронтендом
+          id: investment._id, // Добавляем id для совместимости с фронтендом
         };
       });
     } else {
-      console.error('Неожиданный формат ответа:', response);
+      console.error("Неожиданный формат ответа:", response);
       investments.value = [];
     }
   } catch (error) {
-    console.error('Ошибка загрузки инвестиций:', error);
-    notifications.addNotification({
-      message: `Ошибка загрузки инвестиций: ${error.message}`,
-      type: 'error'
-    });
+    console.error("Ошибка загрузки инвестиций:", error);
     investments.value = [];
   } finally {
     loading.value = false;
@@ -260,7 +283,7 @@ const openInvestmentModal = (investment = null) => {
   } else {
     currentInvestment.value = {
       ...defaultInvestment,
-      order: investments.value.length // Устанавливаем порядок в конец списка
+      order: investments.value.length, // Устанавливаем порядок в конец списка
     };
   }
   showInvestmentModal.value = true;
@@ -272,10 +295,6 @@ const saveInvestment = async (investmentData, isFormData = false) => {
 
     // Проверка обязательных полей для обычного объекта
     if (!isFormData && (!investmentData.name || !investmentData.category)) {
-      notifications.addNotification({
-        message: 'Название и категория инвестиции обязательны',
-        type: 'warning'
-      });
       return;
     }
 
@@ -286,8 +305,8 @@ const saveInvestment = async (investmentData, isFormData = false) => {
       if (currentInvestment.value._id) {
         // Обновление существующей инвестиции с файлом
         response = await ApiService.updateInvestmentWithImage(
-            currentInvestment.value._id,
-            investmentData
+          currentInvestment.value._id,
+          investmentData
         );
       } else {
         // Создание новой инвестиции с файлом
@@ -298,8 +317,8 @@ const saveInvestment = async (investmentData, isFormData = false) => {
       if (currentInvestment.value._id) {
         // Обновление существующей инвестиции
         response = await ApiService.updateInvestment(
-            currentInvestment.value._id,
-            investmentData
+          currentInvestment.value._id,
+          investmentData
         );
       } else {
         // Создание новой инвестиции
@@ -307,48 +326,32 @@ const saveInvestment = async (investmentData, isFormData = false) => {
       }
     }
 
-    console.log('Ответ от сервера:', response);
+    console.log("Ответ от сервера:", response);
 
     if (response && response.success) {
-      // Успешное создание/обновление
-      notifications.addNotification({
-        message: currentInvestment.value._id ? 'Инвестиция успешно обновлена' : 'Инвестиция успешно создана',
-        type: 'success'
-      });
-
       showInvestmentModal.value = false;
       await loadInvestments(); // Перезагрузка списка инвестиций
     } else {
-      throw new Error('Не удалось сохранить инвестицию');
+      throw new Error("Не удалось сохранить инвестицию");
     }
   } catch (error) {
-    console.error('Ошибка сохранения инвестиции:', error);
-    notifications.addNotification({
-      message: `Ошибка при сохранении инвестиции: ${error.message}`,
-      type: 'error'
-    });
+    console.error("Ошибка сохранения инвестиции:", error);
   } finally {
     saving.value = false;
   }
 };
 
 const deleteInvestment = async (investment) => {
-  if (confirm(`Вы действительно хотите удалить инвестицию "${investment.name}"?`)) {
+  if (
+    confirm(`Вы действительно хотите удалить инвестицию "${investment.name}"?`)
+  ) {
     try {
       loading.value = true;
       const investmentId = investment._id || investment.id;
       await ApiService.deleteInvestment(investmentId);
-      notifications.addNotification({
-        message: 'Инвестиция успешно удалена',
-        type: 'success'
-      });
       await loadInvestments();
     } catch (error) {
-      console.error('Error deleting investment:', error);
-      notifications.addNotification({
-        message: 'Ошибка при удалении инвестиции',
-        type: 'error'
-      });
+      console.error("Error deleting investment:", error);
     } finally {
       loading.value = false;
     }
@@ -360,21 +363,12 @@ const toggleInvestmentStatus = async (investment) => {
     loading.value = true;
     const investmentId = investment._id || investment.id;
     await ApiService.updateInvestment(investmentId, {
-      active: !investment.active
-    });
-
-    notifications.addNotification({
-      message: `Инвестиция ${investment.active ? 'деактивирована' : 'активирована'}`,
-      type: 'success'
+      active: !investment.active,
     });
 
     await loadInvestments();
   } catch (error) {
-    console.error('Error toggling investment status:', error);
-    notifications.addNotification({
-      message: 'Ошибка при изменении статуса инвестиции',
-      type: 'error'
-    });
+    console.error("Error toggling investment status:", error);
   } finally {
     loading.value = false;
   }
@@ -382,36 +376,36 @@ const toggleInvestmentStatus = async (investment) => {
 
 // Вспомогательные функции
 const formatMoney = (num) => {
-  if (!num && num !== 0) return '0';
+  if (!num && num !== 0) return "0";
 
   if (num >= 1000000000) {
-    return (num / 1000000000).toFixed(1) + 'B';
+    return (num / 1000000000).toFixed(1) + "B";
   }
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
+    return (num / 1000000).toFixed(1) + "M";
   }
   if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
+    return (num / 1000).toFixed(1) + "K";
   }
   return num.toString();
 };
 
 const getCategoryName = (category) => {
   const categories = {
-    finances: 'Финансы',
-    technology: 'Технологии',
-    business: 'Бизнес',
-    realestate: 'Недвижимость'
+    finances: "Финансы",
+    technology: "Технологии",
+    business: "Бизнес",
+    realestate: "Недвижимость",
   };
   return categories[category] || category;
 };
 
 const getInvestmentType = (type) => {
   const types = {
-    linear: 'Линейный',
-    parabolic: 'Параболический',
-    exponential: 'Экспоненциальный',
-    inverse_parabolic: 'Обратно-параболический'
+    linear: "Линейный",
+    parabolic: "Параболический",
+    exponential: "Экспоненциальный",
+    inverse_parabolic: "Обратно-параболический",
   };
   return types[type] || type;
 };
@@ -490,7 +484,8 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+th,
+td {
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #eee;
@@ -577,7 +572,7 @@ th {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 4px;
-  color: var(--primary-color, #8C60E3);
+  color: var(--primary-color, #8c60e3);
 }
 
 .stat-label {

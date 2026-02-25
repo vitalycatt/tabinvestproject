@@ -106,12 +106,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue';
+import { ref, onMounted } from 'vue';
 import { ApiService } from '@/services/apiService';
 import BaseCard from '@/components/ui/BaseCard.vue';
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue';
 
-const notifications = inject('notifications');
 const loading = ref(true);
 const stats = ref({});
 
@@ -134,10 +133,6 @@ const loadStats = async () => {
 
   } catch (error) {
     console.error('Ошибка загрузки статистики:', error);
-    notifications.addNotification({
-      message: 'Ошибка при загрузке статистики',
-      type: 'error'
-    });
   } finally {
     loading.value = false;
   }

@@ -32,7 +32,6 @@ import {
   ref,
   defineProps,
   defineEmits,
-  inject,
   onMounted,
   watch,
   onUnmounted,
@@ -49,7 +48,6 @@ const props = defineProps({ show: Boolean, task: Object });
 const emit = defineEmits(["close", "complete"]);
 const store = useGameStore();
 const { user } = useTelegram();
-const notifications = inject("notifications");
 const loading = ref(false);
 
 const getTaskIcon = (task) => {

@@ -127,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, inject, onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
 import { useGameStore } from "@/stores/gameStore";
 import { useTelegram } from "@/composables/useTelegram";
 import Header from "@/components/layout/Header.vue";
@@ -141,7 +141,6 @@ const BASE_URL = API_BASE;
 
 const store = useGameStore();
 const { user } = useTelegram();
-const notifications = inject("notifications");
 
 // Состояние загрузки
 const loading = ref(true);
@@ -186,18 +185,10 @@ const fetchProducts = async () => {
         .filter((product) => product.active);
     } else {
       error.value = "Не удалось загрузить продукты";
-      notifications.addNotification({
-        message: "Ошибка загрузки продуктов",
-        type: "error",
-      });
     }
   } catch (err) {
     console.error("Ошибка загрузки продуктов:", err);
     error.value = "Не удалось загрузить продукты";
-    notifications.addNotification({
-      message: "Ошибка загрузки продуктов",
-      type: "error",
-    });
   } finally {
     loading.value = false;
   }
@@ -246,20 +237,10 @@ const activateProduct = async () => {
   const product = selectedProduct.value;
 
   if (product.claimed) {
-    notifications.addNotification({
-      message: "Вы уже активировали этот продукт",
-      type: "info",
-    });
     return;
   }
 
   if (!isProductAvailable(product)) {
-    notifications.addNotification({
-      message: `Необходим пассивный доход ${formatMoney(
-        product.requiredIncome
-      )} в месяц`,
-      type: "error",
-    });
     return;
   }
 
@@ -274,10 +255,6 @@ const activateProduct = async () => {
     : null;
 
   if (!userData) {
-    notifications.addNotification({
-      message: "Ошибка: не удалось получить данные пользователя",
-      type: "error",
-    });
     return;
   }
 
@@ -306,30 +283,13 @@ const activateProduct = async () => {
         selectedProduct.value = products.value[productIndex];
       }
 
-      // Показываем уведомление пользователю
-      notifications.addNotification({
-        message:
-          "Продукт активирован! Наши менеджеры свяжутся с вами в ближайшее время.",
-        type: "success",
-        duration: 5000,
-      });
-
       // Закрываем модальное окно после активации
       setTimeout(() => {
         closeModal();
       }, 1500);
-    } else {
-      notifications.addNotification({
-        message: "Ошибка активации продукта",
-        type: "error",
-      });
     }
   } catch (error) {
     console.error("Ошибка активации продукта:", error);
-    notifications.addNotification({
-      message: "Не удалось отправить заявку на активацию продукта",
-      type: "error",
-    });
   }
 };
 

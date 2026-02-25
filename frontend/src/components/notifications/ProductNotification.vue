@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, inject, onMounted } from "vue";
+import { ref, watch, computed, onMounted } from "vue";
 import { useGameStore } from "@/stores/gameStore";
 import { useRouter } from "vue-router";
 import axios from "axios";
@@ -42,8 +42,6 @@ const disableNotifications = true; // ← временно отключает у
 
 const store = useGameStore();
 const router = useRouter();
-const notifications = inject("notifications");
-
 // Состояние уведомления
 const showNotification = ref(false);
 const activeProduct = ref(null);
@@ -144,12 +142,6 @@ const handleClick = () => {
 
   // После перехода скрываем уведомление
   showNotification.value = false;
-
-  // Показываем информационное сообщение
-  notifications.addNotification({
-    message: "Теперь вы можете активировать новый продукт!",
-    type: "info",
-  });
 };
 
 // Получение полного пути к изображению
