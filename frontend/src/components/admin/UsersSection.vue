@@ -30,6 +30,10 @@
           <div class="stat-label">Новых за неделю</div>
         </div>
         <div class="stat-card">
+          <div class="stat-value">{{ userStats.activeThisMonth }}</div>
+          <div class="stat-label">Активных за месяц</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-value">{{ formatMoney(userStats.totalIncome) }}</div>
           <div class="stat-label">Общий пассивный доход</div>
         </div>
@@ -438,6 +442,7 @@ async function saveUserPassiveIncome(user) {
 const userStats = ref({
   total: 0,
   activeToday: 0,
+  activeThisMonth: 0,
   newThisWeek: 0,
   totalIncome: 0,
   totalBalance: 0,
@@ -577,6 +582,7 @@ const loadUsers = async () => {
         userStats.value = {
           total: response.stats.total || users.value.length,
           activeToday: response.stats.activeToday || 0,
+          activeThisMonth: response.stats.activeThisMonth || 0,
           newThisWeek: response.stats.newThisWeek || 0,
           totalIncome: response.stats.totalIncome || 0,
           totalBalance: response.stats.totalBalance ?? 0,
@@ -593,6 +599,7 @@ const loadUsers = async () => {
         userStats.value = {
           total: response.data.stats.total || users.value.length,
           activeToday: response.data.stats.activeToday || 0,
+          activeThisMonth: response.data.stats.activeThisMonth || 0,
           newThisWeek: response.data.stats.newThisWeek || 0,
           totalIncome: response.data.stats.totalIncome || 0,
           totalBalance: response.data.stats.totalBalance ?? 0,
@@ -684,7 +691,6 @@ const resetUserProgress = async (user) => {
       if (selectedUser.value && selectedUser.value.id === user.id) {
         selectedUser.value = { ...updatedUser };
       }
-
     } catch (error) {
       console.error("Error resetting user progress:", error);
     } finally {
@@ -711,7 +717,6 @@ const toggleUserBlock = async (user) => {
     if (selectedUser.value && selectedUser.value.id === user.id) {
       selectedUser.value = { ...updatedUser };
     }
-
   } catch (error) {
     console.error("Error toggling user block:", error);
   } finally {

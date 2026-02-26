@@ -439,10 +439,17 @@ router.get("/users", async (req, res) => {
     );
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(now);
+    monthAgo.setDate(monthAgo.getDate() - 30);
 
     const activeToday = await User.countDocuments({
       ...filterQuery,
       lastLogin: { $gte: todayStart },
+    });
+
+    const activeThisMonth = await User.countDocuments({
+      ...filterQuery,
+      lastLogin: { $gte: monthAgo },
     });
 
     const newThisWeek = await User.countDocuments({
@@ -501,6 +508,7 @@ router.get("/users", async (req, res) => {
         stats: {
           total: totalUsers,
           activeToday,
+          activeThisMonth,
           newThisWeek,
           totalIncome,
           totalBalance,
