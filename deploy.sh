@@ -2,25 +2,19 @@
 
 set -e
 
-APP_DIR="/root/gitserver-app"
-FRONT_BUILD_DIR="/var/www/tabinvestproject.ru/frontend"
-
-echo "📥 Updating repository..."
-cd $APP_DIR
-git pull origin main
-
-echo "📦 Installing dependencies..."
-npm install --workspaces
+# Настройте под ваш сервер (или задайте через env: DEPLOY_SSH, DEPLOY_FRONT_DIR)
+DEPLOY_SSH="${DEPLOY_SSH:-root@vm-b4e2c1b6.na4u.ru}"
+DEPLOY_FRONT_DIR="${DEPLOY_FRONT_DIR:-/var/www/tabinvestproject.ru/frontend}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "🏗 Building frontend..."
-cd $APP_DIR/frontend
-npm run build
+cd "$SCRIPT_DIR"
+npm run build:frontend
 
-echo "📂 Deploying frontend..."
-rm -rf $FRONT_BUILD_DIR/*
-cp -r dist/* $FRONT_BUILD_DIR/
+echo "📂 Deploying frontend to server..."
+rsync -avz --delete "$SCRIPT_DIR/frontend/dist/" "$DEPLOY_SSH:$DEPLOY_FRONT_DIR/"
 
-echo "♻ Restarting backend..."
-pm2 restart render-start
+echo "🚀 Running server deploy (backend)..."
+ssh "$DEPLOY_SSH" "cd /root/gitserver-app && bash deploy-server.sh"
 
 echo "✅ Deploy complete"
