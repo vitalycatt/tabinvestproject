@@ -2,31 +2,62 @@
 <template>
   <div class="admin-page">
     <!-- Сайдбар с навигацией -->
-    <div class="admin-sidebar" :class="{ 'admin-sidebar--open': isSidebarOpen }">
+    <div
+      class="admin-sidebar"
+      :class="{ 'admin-sidebar--open': isSidebarOpen }"
+    >
       <div class="admin-logo">
         <div class="logo-container">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
-            <path d="M12 9l-3 3 3 3 3-3-3-3z"/>
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
+            />
+            <path d="M12 9l-3 3 3 3 3-3-3-3z" />
           </svg>
           <h2 class="logo-text">Admin<span>Panel</span></h2>
         </div>
         <button class="sidebar-toggle" @click="toggleSidebar">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M6 18L18 6M6 6l12 12"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
       <nav class="admin-nav">
         <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            :class="['nav-button', { active: currentTab === tab.id }]"
-            @click="switchTab(tab.id)"
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="['nav-button', { active: currentTab === tab.id }]"
+          @click="switchTab(tab.id)"
         >
           <!-- Иконка будет здесь -->
           <span class="nav-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <template v-if="tab.id === 'users'">
                 <!-- Иконка пользователей -->
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -35,18 +66,24 @@
               <template v-else-if="tab.id === 'tasks'">
                 <!-- Иконка заданий -->
                 <path d="M9 11l3 3L22 4"></path>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                <path
+                  d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
+                ></path>
               </template>
               <template v-else-if="tab.id === 'products'">
                 <!-- Иконка продуктов -->
                 <circle cx="9" cy="21" r="1"></circle>
                 <circle cx="20" cy="21" r="1"></circle>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                <path
+                  d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+                ></path>
               </template>
               <template v-else-if="tab.id === 'investments'">
                 <!-- Иконка инвестиций -->
                 <path d="M12 1v22"></path>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                <path
+                  d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+                ></path>
               </template>
               <template v-else-if="tab.id === 'notifications'">
                 <!-- Иконка уведомлений -->
@@ -56,7 +93,9 @@
               <template v-else-if="tab.id === 'settings'">
                 <!-- Иконка настроек -->
                 <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                ></path>
               </template>
             </svg>
           </span>
@@ -68,8 +107,15 @@
     <!-- Мобильный хедер -->
     <div class="mobile-header">
       <button class="sidebar-toggle" @click="toggleSidebar">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M3 12h18M3 6h18M3 18h18"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path d="M3 12h18M3 6h18M3 18h18" />
         </svg>
       </button>
       <h2>{{ currentTabName }}</h2>
@@ -88,70 +134,70 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import UsersSection from '../components/admin/UsersSection.vue'
-import TasksSection from '../components/admin/TasksSection.vue'
-import ProductsSection from '../components/admin/ProductsSection.vue'
-import InvestmentsSection from '../components/admin/InvestmentsSection.vue'
-import NotificationsSection from '../components/admin/NotificationsSection.vue'
-import SettingsSection from '../components/admin/SettingsSection.vue'
-import { useAdminStore } from '../stores/adminStore'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from "vue";
+import UsersSection from "../components/admin/UsersSection.vue";
+import TasksSection from "../components/admin/TasksSection.vue";
+import ProductsSection from "../components/admin/ProductsSection.vue";
+import InvestmentsSection from "../components/admin/InvestmentsSection.vue";
+import NotificationsSection from "../components/admin/NotificationsSection.vue";
+import SettingsSection from "../components/admin/SettingsSection.vue";
+import { useAdminStore } from "../stores/adminStore";
+import { useRouter } from "vue-router";
+import { ApiService } from "../services/apiService";
 
-const adminStore = useAdminStore()
-const router = useRouter()
+const adminStore = useAdminStore();
+const router = useRouter();
 
-const currentTab = ref('users')
-const isSidebarOpen = ref(window.innerWidth > 768)
+const currentTab = ref("users");
+const isSidebarOpen = ref(window.innerWidth > 768);
 
 const tabs = [
-  { id: 'users', name: 'Пользователи' },
-  { id: 'tasks', name: 'Задания' },
-  { id: 'products', name: 'Продукты' },
-  { id: 'investments', name: 'Инвестиции' },
-  { id: 'notifications', name: 'Уведомления' },
-  { id: 'settings', name: 'Настройки' }
-]
+  { id: "users", name: "Пользователи" },
+  { id: "tasks", name: "Задания" },
+  { id: "products", name: "Продукты" },
+  { id: "investments", name: "Инвестиции" },
+  { id: "notifications", name: "Уведомления" },
+  { id: "settings", name: "Настройки" },
+];
 
 const currentTabName = computed(() => {
-  return tabs.find(tab => tab.id === currentTab.value)?.name || ''
-})
+  return tabs.find((tab) => tab.id === currentTab.value)?.name || "";
+});
 
 const switchTab = (tabId) => {
-  currentTab.value = tabId
+  currentTab.value = tabId;
   if (window.innerWidth <= 768) {
-    isSidebarOpen.value = false
+    isSidebarOpen.value = false;
   }
-}
+};
 
 const toggleSidebar = () => {
-  isSidebarOpen.value = !isSidebarOpen.value
-}
+  isSidebarOpen.value = !isSidebarOpen.value;
+};
 
 // Проверка авторизации при входе
 onMounted(async () => {
+  const token = localStorage.getItem("token");
 
-    const token = localStorage.getItem("token");
-
-  if (!token) return next("/admin/login");
+  if (!token) return router.push("/admin/login");
 
   const { success } = await ApiService.checkAuth(token);
 
   if (!success) {
     return router.push("/admin/login");
   } else {
-    adminStore.fetchUsers()
+    adminStore.fetchUsers();
   }
 
-  window.addEventListener('resize', handleResize)
-})
+  window.addEventListener("resize", handleResize);
+});
 
 // Метод обработки изменения размера окна
 const handleResize = () => {
   if (window.innerWidth > 768) {
-    isSidebarOpen.value = true
+    isSidebarOpen.value = true;
   }
-}
+};
 </script>
 
 <style scoped>
@@ -192,7 +238,7 @@ const handleResize = () => {
   background: white;
   padding: 0 20px;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 100;
 }
 
@@ -230,7 +276,7 @@ const handleResize = () => {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(90deg, #8C60E3, #5cbdff);
+  background: linear-gradient(90deg, #8c60e3, #5cbdff);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -239,7 +285,7 @@ const handleResize = () => {
 }
 
 .logo-text span {
-  background: linear-gradient(90deg, #5cbdff, #8C60E3);
+  background: linear-gradient(90deg, #5cbdff, #8c60e3);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -286,7 +332,7 @@ const handleResize = () => {
 }
 
 .nav-button.active {
-  background: var(--primary-color, #8C60E3);
+  background: var(--primary-color, #8c60e3);
   box-shadow: 0 4px 12px rgba(140, 96, 227, 0.3);
 }
 
@@ -325,7 +371,7 @@ const handleResize = () => {
 
   .admin-sidebar--open {
     transform: translateX(0);
-    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
   }
 
   .mobile-header {
