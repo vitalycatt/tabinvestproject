@@ -14,7 +14,7 @@ git pull origin main
 
 echo "📦 Installing backend dependencies only..."
 cd "$APP_DIR/backend"
-npm ci --omit=dev
+/root/.nvm/versions/node/v22.18.0/bin/npm ci --omit=dev
 
 echo "♻ Restarting backend..."
 pm2 restart render-start
