@@ -2,6 +2,9 @@
 
 set -e
 
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
 APP_DIR="/root/gitserver-app"
 # Frontend статика: /var/www/tabinvestproject.ru/frontend (копируется локальным deploy.sh)
 
