@@ -6,6 +6,8 @@ node_modules/
 .env.local
 .env.*.local
 *.local
+backend/.env
+frontend/.env
 
 # Build and runtime
 dist/
