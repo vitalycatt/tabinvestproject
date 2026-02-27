@@ -61,10 +61,10 @@ onMounted(async () => {
   }
 });
 
-// Компактное форматирование: K, M, B с двумя знаками после запятой
+// Компактное форматирование: K, M, B, T с двумя знаками после запятой
 const formatCompact = (value) => {
-  const fmt = (n, suffix) =>
-    n.toFixed(2).replace(/\.?0+$/, "") + suffix;
+  const fmt = (n, suffix) => n.toFixed(2).replace(/\.?0+$/, "") + suffix;
+  if (value >= 1e12) return fmt(value / 1e12, "T");
   if (value >= 1e9) return fmt(value / 1e9, "B");
   if (value >= 1e6) return fmt(value / 1e6, "M");
   if (value >= 1e3) return fmt(value / 1e3, "K");
@@ -117,6 +117,8 @@ watch(
   justify-content: center;
   align-items: center;
   margin: 19px auto;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .balance__icon {
@@ -126,13 +128,17 @@ watch(
 
 .balance__amount {
   margin-left: 12px;
-  font-size: 36px;
+  font-size: clamp(14px, 8vw, 36px);
   font-weight: 700;
-  line-height: 42px;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   color: white;
   transition: color 0.3s ease;
   font-variant-numeric: tabular-nums;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .balance__amount--increasing {
