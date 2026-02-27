@@ -2,8 +2,7 @@
 // или создать новый
 
 export const useApi = () => {
-  const API_BASE =
-    import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru";
+  const API_BASE = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru");
   const API_URL = `${API_BASE}/api`;
 
   // Получение рефералов для указанного пользователя

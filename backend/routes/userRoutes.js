@@ -14,11 +14,15 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Get user by ID
+// Get user by ID (обновляем lastLogin при каждом обращении — для подсчёта «активных за месяц»)
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findOne({ telegramId: id });
+        const user = await User.findOneAndUpdate(
+            { telegramId: id },
+            { $set: { lastLogin: new Date() } },
+            { new: true }
+        );
 
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });

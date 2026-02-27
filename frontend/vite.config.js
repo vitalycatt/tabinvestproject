@@ -17,6 +17,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/uploads": {
+        target: "https://tabinvestproject.ru",
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

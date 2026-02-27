@@ -35,7 +35,7 @@ import { useGameStore } from "@/stores/gameStore";
 import { useRouter } from "vue-router";
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru";
+const API_BASE = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru");
 const API_URL = `${API_BASE}/api`;
 const BASE_URL = API_BASE;
 const disableNotifications = true; // ← временно отключает уведомления

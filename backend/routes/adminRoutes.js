@@ -462,24 +462,24 @@ router.get("/users", async (req, res) => {
       {
         $group: {
           _id: null,
-          totalIncome: { $sum: "$gameData.passiveIncome" },
+          totalIncome: { $sum: { $ifNull: ["$gameData.passiveIncome", 0] } },
         },
       },
     ]);
 
-    const totalIncome = totalIncomeResult[0]?.totalIncome || 0;
+    const totalIncome = totalIncomeResult[0]?.totalIncome ?? 0;
 
     const totalBalanceResult = await User.aggregate([
       { $match: filterQuery },
       {
         $group: {
           _id: null,
-          totalBalance: { $sum: "$gameData.balance" },
+          totalBalance: { $sum: { $ifNull: ["$gameData.balance", 0] } },
         },
       },
     ]);
 
-    const totalBalance = totalBalanceResult[0]?.totalBalance || 0;
+    const totalBalance = totalBalanceResult[0]?.totalBalance ?? 0;
 
     const formattedUsers = users.map((user) => ({
       id: user.telegramId,
@@ -506,12 +506,12 @@ router.get("/users", async (req, res) => {
           pageSize: Number(limit),
         },
         stats: {
-          total: totalUsers,
-          activeToday,
-          activeThisMonth,
-          newThisWeek,
-          totalIncome,
-          totalBalance,
+          total: totalUsers ?? 0,
+          activeToday: activeToday ?? 0,
+          activeThisMonth: activeThisMonth ?? 0,
+          newThisWeek: newThisWeek ?? 0,
+          totalIncome: totalIncome ?? 0,
+          totalBalance: totalBalance ?? 0,
         },
       },
     });

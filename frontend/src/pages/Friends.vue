@@ -219,8 +219,7 @@ const loadReferrals = async () => {
     logger.log("Загрузка рефералов для пользователя:", user.value.id);
 
     // Прямой запрос к API для большей прозрачности отладки
-    const API_BASE =
-      import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru";
+    const API_BASE = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru");
     const response = await fetch(
       `${API_BASE}/api/referrals?userId=${user.value.id}`
     );

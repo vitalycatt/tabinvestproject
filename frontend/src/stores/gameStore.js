@@ -609,8 +609,9 @@ export const useGameStore = defineStore("game", {
         }
         try {
           // Используем прямой подход для простоты отладки
-          const API_BASE =
-            import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru";
+          const API_BASE = import.meta.env.DEV
+            ? ""
+            : import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru";
           const response = await fetch(
             `${API_BASE}/api/admin/users/${userId}`,
             {
@@ -723,8 +724,9 @@ export const useGameStore = defineStore("game", {
           lastSaved: new Date().toISOString(),
         });
 
-        const API_BASE =
-          import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru";
+        const API_BASE = import.meta.env.DEV
+          ? ""
+          : import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru";
         const response = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
           method: "PUT",
           headers: {
@@ -795,14 +797,13 @@ export const useGameStore = defineStore("game", {
           lastLogin: new Date().toISOString(),
         };
 
-        // Прямой запрос к серверу, минуя ApiService
-        const API_BASE =
-          import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru";
+        // Прямой запрос к серверу, минуя ApiService (в dev — относительный URL через прокси)
+        const API_BASE = import.meta.env.DEV
+          ? ""
+          : import.meta.env.VITE_API_BASE || "https://tabinvestproject.ru";
         const response = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(basicData),
         });
 
