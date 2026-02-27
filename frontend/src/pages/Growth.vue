@@ -171,9 +171,9 @@ const getInvestmentImageUrl = (investment) => {
     return investment.image;
   }
 
-  // Если это относительный путь с uploads
+  // Относительный путь /uploads/ — запрашиваем с того же origin (работает после редеплоя без зависимости от VITE_API_BASE)
   if (investment.image.startsWith("/uploads/")) {
-    return ApiService.API_URL + investment.image;
+    return investment.image;
   }
 
   // Иначе обрабатываем как локальное изображение из assets
