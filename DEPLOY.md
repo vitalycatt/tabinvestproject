@@ -93,7 +93,7 @@ export DEPLOY_FRONT_DIR="/var/www/другой-сайт/frontend"
 ## Если что-то пошло не так
 
 - **На проде в API нет полей `activeThisMonth` / `totalBalance` в `data.stats`** — чаще всего на сервере крутится **старая версия кода** (процесс не перезапущен после деплоя). Что проверить:
-  1. **Заголовок ответа** — запрос к `GET /api/admin/users?page=1&limit=1` должен вернуть заголовок `X-Admin-Users-Stats: v2`. Если заголовка нет — обрабатывает запрос старый код, нужен перезапуск PM2.
+  1. **Заголовок ответа** — запрос к `GET /api/admin/users?page=1&limit=1` должен вернуть заголовок `X-Admin-Users-Stats: v2`. В браузере он виден только если CORS разрешает его (в бэкенде настроено `exposedHeaders: ['X-Admin-Users-Stats']`). Если в браузере заголовка не видно — на сервере проверьте напрямую бэкенд (подставьте порт из `backend/.env`): `curl -sI "http://127.0.0.1:PORT/api/admin/users?page=1&limit=1"` и поищите в выводе `X-Admin-Users-Stats`. Если там заголовок есть, а через домен нет — возможно, nginx не проксирует кастомные заголовки. Если и в curl заголовка нет — крутится старая версия кода, перезапустите PM2.
   2. **Файлы на сервере** (подставьте свой `APP_DIR`, по умолчанию `/root/gitserver-app`):
      ```bash
      grep -n "activeThisMonth\|totalBalance" /root/gitserver-app/backend/routes/adminRoutes.js

@@ -54,6 +54,7 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
     credentials: true,
+    exposedHeaders: ["X-Admin-Users-Stats"],
   })
 );
 app.use(express.json());
