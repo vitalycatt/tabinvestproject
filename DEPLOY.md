@@ -92,7 +92,15 @@ export DEPLOY_FRONT_DIR="/var/www/другой-сайт/frontend"
 
 ## Если что-то пошло не так
 
-- **На проде в API нет полей `activeThisMonth` / `totalBalance` в `data.stats`** — сервер тянет ветку `main` (`git pull origin main` в `deploy-server.sh`). Убедитесь, что нужные правки залиты в `main` (или смените в скрипте ветку на ту, с которой деплоите). После деплоя проверьте заголовок ответа: `X-Admin-Users-Stats: v2` — если он есть, работает актуальный обработчик. Затем сделайте жёсткий перезапуск PM2: `pm2 restart render-start --update-env`.
+- **На проде в API нет полей `activeThisMonth` / `totalBalance` в `data.stats`** — чаще всего на сервере крутится **старая версия кода** (процесс не перезапущен после деплоя). Что проверить:
+  1. **Заголовок ответа** — запрос к `GET /api/admin/users?page=1&limit=1` должен вернуть заголовок `X-Admin-Users-Stats: v2`. Если заголовка нет — обрабатывает запрос старый код, нужен перезапуск PM2.
+  2. **Файлы на сервере** (подставьте свой `APP_DIR`, по умолчанию `/root/gitserver-app`):
+     ```bash
+     grep -n "activeThisMonth\|totalBalance" /root/gitserver-app/backend/routes/adminRoutes.js
+     ```
+     Должны быть строки с `activeThisMonth` и `totalBalance`. Если их нет — проверьте ветку (`git branch`), выполните `git pull origin main`, снова проверьте и перезапустите: `pm2 restart render-start --update-env`.
+  3. **Перезапуск после pull** — после `git pull` обязательно выполняется `pm2 restart render-start` в `deploy-server.sh`; при ручном обновлении кода перезапуск тоже нужен.
+  4. В ответе API поля дублируются: `data.stats.activeThisMonth`, `data.stats.totalBalance` и на верхнем уровне `data`: `data.activeThisMonth`, `data.totalBalance` — фронт может брать из любого места.
 - **«npm: command not found» при деплое** — в `deploy-server.sh` используется полный путь к `npm` (из nvm). Если на сервере сменили версию Node, обновить этот путь (на сервере выполнить `which npm` и подставить в скрипт).
 - **Сайт не открывается по домену** — проверить nginx: `systemctl status nginx`. Убедиться, что конфиг сайта есть в `/etc/nginx/sites-available/` и включён через симлинк в `sites-enabled/`, в конфиге указаны правильные `root` для статики и `proxy_pass` на порт бэкенда.
 - **Фронт ходит на localhost** — пересобрать фронт при актуальном `frontend/.env.production` и снова запустить `./deploy.sh`.

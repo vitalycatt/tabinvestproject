@@ -457,12 +457,22 @@ router.get("/users", async (req, res) => {
       registeredAt: { $gte: weekAgo },
     });
 
+    // $convert гарантирует число даже если в БД записана строка (на проде могли сохраниться строки)
     const totalIncomeResult = await User.aggregate([
       { $match: filterQuery },
       {
         $group: {
           _id: null,
-          totalIncome: { $sum: { $ifNull: ["$gameData.passiveIncome", 0] } },
+          totalIncome: {
+            $sum: {
+              $convert: {
+                input: "$gameData.passiveIncome",
+                to: "double",
+                onError: 0,
+                onNull: 0,
+              },
+            },
+          },
         },
       },
     ]);
@@ -474,7 +484,16 @@ router.get("/users", async (req, res) => {
       {
         $group: {
           _id: null,
-          totalBalance: { $sum: { $ifNull: ["$gameData.balance", 0] } },
+          totalBalance: {
+            $sum: {
+              $convert: {
+                input: "$gameData.balance",
+                to: "double",
+                onError: 0,
+                onNull: 0,
+              },
+            },
+          },
         },
       },
     ]);
@@ -495,14 +514,17 @@ router.get("/users", async (req, res) => {
       blocked: user.blocked || false,
     }));
 
-    // Явно формируем stats со всеми полями (для проверки на проде: в ответе должны быть activeThisMonth и totalBalance)
+    // Единый источник числовых значений — JSON.stringify не опускает ключи (избегаем undefined)
+    const activeThisMonthVal = Number(activeThisMonth) || 0;
+    const totalBalanceVal = Number(totalBalance) || 0;
+
     const stats = {
       total: Number(totalUsers) || 0,
       activeToday: Number(activeToday) || 0,
-      activeThisMonth: Number(activeThisMonth) || 0,
+      activeThisMonth: activeThisMonthVal,
       newThisWeek: Number(newThisWeek) || 0,
       totalIncome: Number(totalIncome) || 0,
-      totalBalance: Number(totalBalance) || 0,
+      totalBalance: totalBalanceVal,
     };
 
     res.set("X-Admin-Users-Stats", "v2"); // маркер актуального обработчика (есть activeThisMonth, totalBalance)
@@ -517,6 +539,8 @@ router.get("/users", async (req, res) => {
           pageSize: Number(limit),
         },
         stats,
+        activeThisMonth: activeThisMonthVal,
+        totalBalance: totalBalanceVal,
       },
     });
   } catch (error) {

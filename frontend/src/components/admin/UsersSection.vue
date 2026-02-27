@@ -578,14 +578,16 @@ const loadUsers = async () => {
         isEditingBalance: false,
       }));
 
-      if (response.stats) {
+      if (response.stats || response.users) {
+        const s = response.stats || {};
         userStats.value = {
-          total: response.stats.total || users.value.length,
-          activeToday: response.stats.activeToday || 0,
-          activeThisMonth: response.stats.activeThisMonth || 0,
-          newThisWeek: response.stats.newThisWeek || 0,
-          totalIncome: response.stats.totalIncome || 0,
-          totalBalance: response.stats.totalBalance ?? 0,
+          total:
+            s.total ?? response.pagination?.totalUsers ?? users.value.length,
+          activeToday: s.activeToday ?? 0,
+          activeThisMonth: s.activeThisMonth ?? response.activeThisMonth ?? 0,
+          newThisWeek: s.newThisWeek ?? 0,
+          totalIncome: s.totalIncome ?? 0,
+          totalBalance: s.totalBalance ?? response.totalBalance ?? 0,
         };
       }
     } else if (response && response.data && response.data.users) {
@@ -595,14 +597,20 @@ const loadUsers = async () => {
         isEditingBalance: false,
       }));
 
-      if (response.data.stats) {
+      if (response.data.stats || response.data.users) {
+        const s = response.data.stats || {};
+        // activeThisMonth и totalBalance могут приходить в data напрямую, если stats обрезают (прокси/старый бэк)
         userStats.value = {
-          total: response.data.stats.total || users.value.length,
-          activeToday: response.data.stats.activeToday || 0,
-          activeThisMonth: response.data.stats.activeThisMonth || 0,
-          newThisWeek: response.data.stats.newThisWeek || 0,
-          totalIncome: response.data.stats.totalIncome || 0,
-          totalBalance: response.data.stats.totalBalance ?? 0,
+          total:
+            s.total ??
+            response.data.pagination?.totalUsers ??
+            users.value.length,
+          activeToday: s.activeToday ?? 0,
+          activeThisMonth:
+            s.activeThisMonth ?? response.data.activeThisMonth ?? 0,
+          newThisWeek: s.newThisWeek ?? 0,
+          totalIncome: s.totalIncome ?? 0,
+          totalBalance: s.totalBalance ?? response.data.totalBalance ?? 0,
         };
       }
     } else {
