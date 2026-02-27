@@ -1,8 +1,7 @@
 // src/services/apiService.js
 
-// Константы
-const API_URL = import.meta.env.VITE_API_BASE;
-const DEBUG = import.meta.env.MODE === "development";
+// В dev используем относительные URL — запросы идут через прокси Vite, без CORS
+const API_URL = import.meta.env.DEV ? "" : import.meta.env.VITE_API_BASE || "";
 
 export async function fetchUserFromServer(id) {
   const res = await fetch(`/api/users/${id}`);
@@ -86,8 +85,12 @@ export async function updateUserBalance(userId, amount) {
  * @returns {Promise<any>} - данные ответа или выбрасывает ошибку
  */
 async function request(url, method = "GET", data = null, options = {}) {
-  // Формируем полный URL
-  const fullUrl = url.startsWith("http") ? url : `${API_URL}${url}`;
+  // Формируем полный URL (в dev API_URL пустой — относительный путь, прокси Vite)
+  const fullUrl = url.startsWith("http")
+    ? url
+    : API_URL
+    ? `${API_URL}${url}`
+    : url;
 
   // Настройки запроса
   const fetchOptions = {

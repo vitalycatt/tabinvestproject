@@ -1,28 +1,22 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { fileURLToPath, URL } from 'node:url'
-import { resolve } from 'path'
+import vue from "@vitejs/plugin-vue";
+import { defineConfig } from "vite";
+import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
-  plugins: [
-    vue(),
-  ],
+  plugins: [vue()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
   },
   server: {
-    port: 5173,
+    port: 5174,
     proxy: {
-      '/api': {
-        target: 'https://tabinvestproject.ru',
+      "/api": {
+        target: "https://tabinvestproject.ru",
         changeOrigin: true,
         secure: false,
-        headers: {
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
-    }
-  }
-})
+      },
+    },
+  },
+});
