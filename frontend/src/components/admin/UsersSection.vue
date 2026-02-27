@@ -30,7 +30,7 @@
           <div class="stat-label">Новых за неделю</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ userStats.activeThisMonth }}</div>
+          <div class="stat-value">{{ statsFromUsers.activeThisMonth }}</div>
           <div class="stat-label">Активных за месяц</div>
         </div>
         <div class="stat-card">
@@ -39,7 +39,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-value">
-            {{ formatMoney(userStats.totalBalance) }}
+            {{ formatMoney(statsFromUsers.totalBalance) }}
           </div>
           <div class="stat-label">Суммарный баланс</div>
         </div>
@@ -447,6 +447,20 @@ const userStats = ref({
   totalIncome: 0,
   totalBalance: 0,
 });
+
+// Считаем totalBalance и activeThisMonth на фронте по загруженному списку (обход проблемы с полем stats в ответе API)
+const statsFromUsers = computed(() => {
+  const list = users.value || [];
+  const totalBalance = list.reduce((sum, u) => sum + (Number(u.balance) || 0), 0);
+  const monthAgo = new Date();
+  monthAgo.setDate(monthAgo.getDate() - 30);
+  const activeThisMonth = list.filter((u) => {
+    const d = u.lastLogin ? new Date(u.lastLogin) : null;
+    return d && d >= monthAgo;
+  }).length;
+  return { totalBalance, activeThisMonth };
+});
+
 const searchQuery = ref("");
 const filterStatus = ref("all");
 const sortBy = ref("lastLogin");
