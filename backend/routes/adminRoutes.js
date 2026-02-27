@@ -495,6 +495,17 @@ router.get("/users", async (req, res) => {
       blocked: user.blocked || false,
     }));
 
+    // Явно формируем stats со всеми полями (для проверки на проде: в ответе должны быть activeThisMonth и totalBalance)
+    const stats = {
+      total: Number(totalUsers) || 0,
+      activeToday: Number(activeToday) || 0,
+      activeThisMonth: Number(activeThisMonth) || 0,
+      newThisWeek: Number(newThisWeek) || 0,
+      totalIncome: Number(totalIncome) || 0,
+      totalBalance: Number(totalBalance) || 0,
+    };
+
+    res.set("X-Admin-Users-Stats", "v2"); // маркер актуального обработчика (есть activeThisMonth, totalBalance)
     res.json({
       success: true,
       data: {
@@ -505,14 +516,7 @@ router.get("/users", async (req, res) => {
           totalUsers,
           pageSize: Number(limit),
         },
-        stats: {
-          total: totalUsers ?? 0,
-          activeToday: activeToday ?? 0,
-          activeThisMonth: activeThisMonth ?? 0,
-          newThisWeek: newThisWeek ?? 0,
-          totalIncome: totalIncome ?? 0,
-          totalBalance: totalBalance ?? 0,
-        },
+        stats,
       },
     });
   } catch (error) {

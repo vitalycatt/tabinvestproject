@@ -92,6 +92,7 @@ export DEPLOY_FRONT_DIR="/var/www/другой-сайт/frontend"
 
 ## Если что-то пошло не так
 
+- **На проде в API нет полей `activeThisMonth` / `totalBalance` в `data.stats`** — сервер тянет ветку `main` (`git pull origin main` в `deploy-server.sh`). Убедитесь, что нужные правки залиты в `main` (или смените в скрипте ветку на ту, с которой деплоите). После деплоя проверьте заголовок ответа: `X-Admin-Users-Stats: v2` — если он есть, работает актуальный обработчик. Затем сделайте жёсткий перезапуск PM2: `pm2 restart render-start --update-env`.
 - **«npm: command not found» при деплое** — в `deploy-server.sh` используется полный путь к `npm` (из nvm). Если на сервере сменили версию Node, обновить этот путь (на сервере выполнить `which npm` и подставить в скрипт).
 - **Сайт не открывается по домену** — проверить nginx: `systemctl status nginx`. Убедиться, что конфиг сайта есть в `/etc/nginx/sites-available/` и включён через симлинк в `sites-enabled/`, в конфиге указаны правильные `root` для статики и `proxy_pass` на порт бэкенда.
 - **Фронт ходит на localhost** — пересобрать фронт при актуальном `frontend/.env.production` и снова запустить `./deploy.sh`.
