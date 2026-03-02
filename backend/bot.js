@@ -389,10 +389,29 @@ bot.onText(/\/start(.*)/, async (msg, match) => {
       }
     }
 
+    // Подсчёт MAU (Monthly Active Users) — активные за последние 30 дней
+    let mauCount = 0;
+    try {
+      const monthAgo = new Date();
+      monthAgo.setDate(monthAgo.getDate() - 30);
+      mauCount = await User.countDocuments({
+        lastLogin: { $gte: monthAgo },
+      });
+    } catch (err) {
+      console.error("Ошибка подсчёта MAU:", err);
+    }
+
+    const statsLine =
+      mauCount > 0
+        ? `\n\n📊 Активных игроков за месяц (MAU): ${mauCount}`
+        : "";
+
     // Отправка приветственного сообщения
-    const welcomeMessage = startParam.startsWith("ref_")
-      ? "🎮 Добро пожаловать в игру! Вы присоединились по реферальной ссылке.\n\nРазвивайте свой виртуальный бизнес, зарабатывайте деньги и соревнуйтесь с друзьями!"
-      : "🎮 Добро пожаловать в игру!\n\nРазвивайте свой виртуальный бизнес, зарабатывайте деньги и соревнуйтесь с друзьями!";
+    const welcomeMessage =
+      (startParam.startsWith("ref_")
+        ? "🎮 Добро пожаловать в игру! Вы присоединились по реферальной ссылке.\n\nРазвивайте свой виртуальный бизнес, зарабатывайте деньги и соревнуйтесь с друзьями!"
+        : "🎮 Добро пожаловать в игру!\n\nРазвивайте свой виртуальный бизнес, зарабатывайте деньги и соревнуйтесь с друзьями!") +
+      statsLine;
 
     // Используем прямую URL-схему Telegram для запуска в режиме Fullsize
     await bot.sendMessage(userId, welcomeMessage, {
