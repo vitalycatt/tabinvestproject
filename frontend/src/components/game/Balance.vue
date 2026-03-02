@@ -1,10 +1,12 @@
 <!-- src/components/game/Balance.vue -->
 <template>
-  <div class="balance">
+  <div class="balance" ref="balanceContainer">
     <img src="../../assets/images/coin.png" class="balance__icon" alt="coin" />
     <span
+      ref="balanceText"
       class="balance__amount"
       :class="{ 'balance__amount--increasing': isIncreasing }"
+      :style="fontSizeStyle"
     >
       {{ formattedBalance }}
     </span>
@@ -12,7 +14,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, inject } from "vue";
+import {
+  ref,
+  inject,
+  watch,
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+} from "vue";
 import { useGameStore } from "@/stores/gameStore";
 import { GameSettingsService } from "@/services/GameSettingsService";
 
@@ -21,27 +31,52 @@ const logger = inject("logger", console);
 const isIncreasing = ref(false);
 let previousBalance = store.balance;
 
-// Настраиваемые параметры форматирования
-const useCustomFormat = ref(false);
+const balanceContainer = ref(null);
+const balanceText = ref(null);
+const overrideFontSize = ref(null);
+
+const MIN_FONT_SIZE = 14;
+
+let resizeObserver = null;
+
+const fontSizeStyle = computed(() => {
+  if (overrideFontSize.value !== null) {
+    return { fontSize: overrideFontSize.value + "px" };
+  }
+  return {};
+});
+
 const customFormatting = ref({
   useSpaces: true,
   animation: {
-    duration: 100, // время анимации в мс
-    enabled: true, // включена ли анимация
+    duration: 100,
+    enabled: true,
   },
 });
 
-// Загрузка настроек при монтировании
+const adjustFontSize = async () => {
+  const container = balanceContainer.value;
+  const textEl = balanceText.value;
+  if (!container || !textEl) return;
+
+  overrideFontSize.value = null;
+  await nextTick();
+
+  const availableWidth = container.clientWidth;
+  const textWidth = textEl.scrollWidth;
+
+  if (textWidth > availableWidth) {
+    const currentSize = parseFloat(getComputedStyle(textEl).fontSize);
+    const ratio = availableWidth / textWidth;
+    overrideFontSize.value = Math.max(
+      MIN_FONT_SIZE,
+      Math.floor(currentSize * ratio)
+    );
+  }
+};
+
 onMounted(async () => {
   try {
-    // Загрузка настроек форматирования
-    const customFormat = await GameSettingsService.getSetting(
-      "balance.useCustomFormat",
-      false
-    );
-    useCustomFormat.value = customFormat;
-
-    // Загрузка настроек пробелов и анимации
     const formatting = await GameSettingsService.getSetting(
       "balance.formatting",
       null
@@ -54,46 +89,37 @@ onMounted(async () => {
       logger.log("Загружены настройки форматирования баланса:", formatting);
     }
 
-    // Инициализация с текущим балансом
     previousBalance = store.balance;
   } catch (error) {
     logger.error("Ошибка загрузки настроек баланса:", error);
   }
+
+  await nextTick();
+  adjustFontSize();
+
+  if (balanceContainer.value) {
+    resizeObserver = new ResizeObserver(() => adjustFontSize());
+    resizeObserver.observe(balanceContainer.value);
+  }
 });
 
-// Компактное форматирование: K, M, B, T с двумя знаками после запятой
-const formatCompact = (value) => {
-  const fmt = (n, suffix) => n.toFixed(2).replace(/\.?0+$/, "") + suffix;
-  if (value >= 1e12) return fmt(value / 1e12, "T");
-  if (value >= 1e9) return fmt(value / 1e9, "B");
-  if (value >= 1e6) return fmt(value / 1e6, "M");
-  if (value >= 1e3) return fmt(value / 1e3, "K");
-  return null;
-};
+onUnmounted(() => {
+  if (resizeObserver) resizeObserver.disconnect();
+});
 
-// Форматированный баланс с учетом настроек
 const formattedBalance = computed(() => {
-  // Округляем баланс до целого числа
   const value = Math.floor(store.balance);
-
-  // Для больших чисел используем компактный вид (k, kk, kkk)
-  const compact = formatCompact(value);
-  if (compact !== null) {
-    return compact;
-  }
-
-  // Для небольших чисел — полное число с пробелами или без
   if (customFormatting.value.useSpaces) {
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   }
   return value.toString();
 });
 
-// Следим за изменением баланса и применяем анимацию
+watch(formattedBalance, () => adjustFontSize());
+
 watch(
   () => store.balance,
   (newBalance) => {
-    // Если анимация отключена в настройках, не применяем её
     if (!customFormatting.value.animation.enabled) {
       previousBalance = newBalance;
       return;
@@ -103,7 +129,7 @@ watch(
       isIncreasing.value = true;
       setTimeout(() => {
         isIncreasing.value = false;
-      }, customFormatting.value.animation.duration); // Настраиваемое время анимации
+      }, customFormatting.value.animation.duration);
     }
     previousBalance = newBalance;
   },
@@ -119,25 +145,26 @@ watch(
   margin: 19px auto;
   max-width: 100%;
   min-width: 0;
+  padding: 0 16px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .balance__icon {
   width: 36px;
   height: 36px;
+  flex-shrink: 0;
 }
 
 .balance__amount {
   margin-left: 12px;
-  font-size: clamp(14px, 8vw, 36px);
+  font-size: 36px;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.02em;
   color: white;
   transition: color 0.3s ease;
   font-variant-numeric: tabular-nums;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
