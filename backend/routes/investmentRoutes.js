@@ -195,9 +195,7 @@ router.put('/:id/upload', handleInvestmentUploadErrors, async (req, res) => {
             // Удаляем старое изображение
             if (existingInvestment.image && !existingInvestment.image.startsWith('http')) {
                 const fileName = existingInvestment.image.split('/').pop();
-                const isProduction = process.env.NODE_ENV === 'production';
-                const uploadsDir = isProduction ? '/data/uploads' : path.join(process.cwd(), 'uploads');
-                const oldFilePath = path.join(uploadsDir, fileName);
+                const oldFilePath = path.join(uploadsPath, fileName);
 
                 if (fs.existsSync(oldFilePath)) {
                     fs.unlinkSync(oldFilePath);
@@ -297,9 +295,7 @@ router.delete('/:id', async (req, res) => {
         // Удаляем изображение если есть
         if (investment.image && !investment.image.startsWith('http')) {
             const fileName = investment.image.split('/').pop();
-            const isProduction = process.env.NODE_ENV === 'production';
-            const uploadsDir = isProduction ? '/data/uploads' : path.join(process.cwd(), 'uploads');
-            const oldFilePath = path.join(uploadsDir, fileName);
+            const oldFilePath = path.join(uploadsPath, fileName);
 
             if (fs.existsSync(oldFilePath)) {
                 fs.unlinkSync(oldFilePath);
