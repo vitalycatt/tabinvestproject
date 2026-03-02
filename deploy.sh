@@ -12,7 +12,7 @@ cd "$SCRIPT_DIR"
 npm run build:frontend
 
 echo "📂 Deploying frontend to server..."
-rsync -avz --delete "$SCRIPT_DIR/frontend/dist/" "$DEPLOY_SSH:$DEPLOY_FRONT_DIR/"
+rsync -avz --delete --exclude='uploads/' "$SCRIPT_DIR/frontend/dist/" "$DEPLOY_SSH:$DEPLOY_FRONT_DIR/"
 
 echo "🚀 Running server deploy (backend)..."
 ssh "$DEPLOY_SSH" "cd /root/gitserver-app && bash deploy-server.sh"
