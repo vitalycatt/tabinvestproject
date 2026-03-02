@@ -140,17 +140,9 @@ async function request(url, method = "GET", data = null, options = {}) {
     }
 
     // Пробуем распарсить JSON
+    let result;
     try {
-      const result = JSON.parse(responseText);
-
-      // Проверка на ошибки
-      if (!response.ok || result.success === false) {
-        const errorMessage =
-          result.error || result.message || `HTTP ошибка: ${response.status}`;
-        throw new Error(errorMessage);
-      }
-
-      return result;
+      result = JSON.parse(responseText);
     } catch (jsonError) {
       console.error(
         "Ошибка разбора JSON:",
@@ -159,13 +151,21 @@ async function request(url, method = "GET", data = null, options = {}) {
         responseText
       );
 
-      // Если ответ не JSON, но статус успешный
       if (response.ok) {
         return { success: true, rawText: responseText };
       }
 
       throw new Error(`Ошибка разбора ответа сервера: ${responseText}`);
     }
+
+    // Проверка на ошибки (после успешного парсинга JSON)
+    if (!response.ok || result.success === false) {
+      const errorMessage =
+        result.error || result.message || `HTTP ошибка: ${response.status}`;
+      throw new Error(errorMessage);
+    }
+
+    return result;
   } catch (error) {
     // Обработка ошибок
     console.error(`❌ API Error (${method} ${url}):`, error);
@@ -950,6 +950,12 @@ export const ApiService = {
    */
   async getInvestmentsByCategory(id, category) {
     return request(`/api/investments/category/${category}/${id}`);
+  },
+
+  async addPassiveIncome(userId, addedIncome) {
+    return request(`/api/users/${userId}/addPassiveIncome`, "POST", {
+      addedIncome,
+    });
   },
 
   // НАСТРОЙКИ

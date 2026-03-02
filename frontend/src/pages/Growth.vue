@@ -119,6 +119,12 @@ const categories = [
 
 // Загрузка инвестиций с сервера по категории
 const loadInvestments = async (category) => {
+  const userId = store.currentUserId;
+  if (!userId) {
+    logger.error("loadInvestments: userId не определён, пропускаем загрузку");
+    return;
+  }
+
   loading.value = true;
   error.value = null;
 
@@ -126,7 +132,7 @@ const loadInvestments = async (category) => {
     logger.log("Загрузка инвестиций для категории:", category);
 
     const response = await ApiService.getInvestmentsByCategory(
-      store.currentUser.id,
+      userId,
       category
     );
 
@@ -310,10 +316,7 @@ const handleInvestment = async (investment) => {
 
     logger.log("Before purchase, passiveIncome =", store.passiveIncome || 0);
     // Передаем только доход за текущую покупку
-    const data = await store.buyInvestment(
-      store.currentUser.id,
-      investment._id
-    );
+    const data = await store.buyInvestment(store.currentUserId, investment._id);
 
     console.log(data);
 
@@ -370,6 +373,26 @@ onMounted(async () => {
     });
   }
 
+  // Ждём завершения синхронизации, если userId ещё не доступен
+  if (!store.currentUserId) {
+    await new Promise((resolve) => {
+      const unwatch = watch(
+        () => store.currentUserId,
+        (id) => {
+          if (id) {
+            unwatch();
+            resolve();
+          }
+        },
+        { immediate: true }
+      );
+      setTimeout(() => {
+        unwatch();
+        resolve();
+      }, 10000);
+    });
+  }
+
   // Загружаем инвестиции текущей категории
   await loadInvestments(currentCategory.value);
 
@@ -378,11 +401,9 @@ onMounted(async () => {
     if (!store.passiveIncome || store.passiveIncome <= 0) return;
 
     try {
-      const res = await ApiService.post(
-        `/user/${store.userId}/addPassiveIncome`,
-        {
-          addedIncome: store.passiveIncome, // отправляем именно текущий пассивный доход
-        }
+      const res = await ApiService.addPassiveIncome(
+        store.currentUserId,
+        store.passiveIncome
       );
 
       if (res.success) {
