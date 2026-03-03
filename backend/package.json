@@ -5,7 +5,8 @@
   "main": "bot.js",
   "scripts": {
     "start": "cross-env NODE_ENV=production node render-start.js",
-    "dev": "cross-env NODE_ENV=development nodemon bot.js"
+    "dev": "cross-env NODE_ENV=development nodemon bot.js",
+    "check-mau": "node scripts/check-mau.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
