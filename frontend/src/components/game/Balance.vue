@@ -1,7 +1,12 @@
 <!-- src/components/game/Balance.vue -->
 <template>
   <div class="balance" ref="balanceContainer">
-    <img src="../../assets/images/coin.png" class="balance__icon" alt="coin" />
+    <img
+      src="../../assets/images/coin.png"
+      ref="balanceIcon"
+      class="balance__icon"
+      alt="coin"
+    />
     <span
       ref="balanceText"
       class="balance__amount"
@@ -33,6 +38,7 @@ let previousBalance = store.balance;
 
 const balanceContainer = ref(null);
 const balanceText = ref(null);
+const balanceIcon = ref(null);
 const overrideFontSize = ref(null);
 
 const MIN_FONT_SIZE = 14;
@@ -57,12 +63,27 @@ const customFormatting = ref({
 const adjustFontSize = async () => {
   const container = balanceContainer.value;
   const textEl = balanceText.value;
+  const iconEl = balanceIcon.value;
   if (!container || !textEl) return;
+
+  // Для коротких чисел (до 9 цифр) всегда используем базовый размер шрифта
+  if (digitsCount.value <= 9) {
+    overrideFontSize.value = null;
+    return;
+  }
 
   overrideFontSize.value = null;
   await nextTick();
 
-  const availableWidth = container.clientWidth;
+  // Ширина, доступная под текст: ширина контейнера минус иконка и отступы
+  let availableWidth = container.clientWidth;
+  if (iconEl) {
+    // ширина иконки + отступ между иконкой и числом (margin-left: 12px) + небольшой запас
+    const reserved =
+      iconEl.offsetWidth + 12 /* margin-left */ + 8 /* safety padding */;
+    availableWidth = Math.max(0, availableWidth - reserved);
+  }
+
   const textWidth = textEl.scrollWidth;
 
   if (textWidth > availableWidth) {
@@ -107,8 +128,24 @@ onUnmounted(() => {
   if (resizeObserver) resizeObserver.disconnect();
 });
 
+const rawValue = computed(() => {
+  const n = Math.floor(store.balance);
+  return Number.isFinite(n) ? n : 0;
+});
+
+const digitsCount = computed(() => {
+  return rawValue.value.toString().replace(/\D/g, "").length;
+});
+
 const formattedBalance = computed(() => {
-  const value = Math.floor(store.balance);
+  const value = rawValue.value;
+
+  // До 9 цифр показываем число как есть, без форматирования
+  if (digitsCount.value <= 9) {
+    return value.toString();
+  }
+
+  // Для длинных чисел (> 9 цифр) включаем форматирование (например, пробелы)
   if (customFormatting.value.useSpaces) {
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   }
