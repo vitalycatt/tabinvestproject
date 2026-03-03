@@ -15,23 +15,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 import dbConnect from "../lib/dbConnect.js";
-import User from "../models/User.js";
+import { getMauStats } from "../lib/stats.js";
 
 async function run() {
   await dbConnect();
   console.log("Подключение к БД: OK");
 
-  const monthAgo = new Date();
-  monthAgo.setDate(monthAgo.getDate() - 30);
-
-  const mauCount = await User.countDocuments({
-    lastLogin: { $gte: monthAgo },
-  });
-
-  const totalUsers = await User.countDocuments({});
+  const { activeThisMonth, totalUsers } = await getMauStats();
 
   console.log("---");
-  console.log("MAU (активных за последние 30 дней):", mauCount);
+  console.log("MAU (активных за последние 30 дней):", activeThisMonth);
   console.log("Всего пользователей:", totalUsers);
   console.log("---");
   process.exit(0);

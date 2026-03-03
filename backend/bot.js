@@ -8,6 +8,7 @@ import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import TelegramBot from "node-telegram-bot-api";
 import dbConnect from "./lib/dbConnect.js";
+import { getMauStats } from "./lib/stats.js";
 import config, { isProduction, uploadsPath } from "./config.js";
 // Импорт моделей
 import User from "./models/User.js";
@@ -230,6 +231,17 @@ app.use("/api/investments", investmentRoutes);
 app.use("/api/tasks/user", taskUserRoutes);
 app.use("/api/tasks/complete", taskCompleteRoutes);
 
+// MAU для проверки на сервере: curl http://localhost:PORT/api/stats/mau
+app.get("/api/stats/mau", async (req, res) => {
+  try {
+    const { activeThisMonth, totalUsers } = await getMauStats();
+    res.json({ success: true, activeThisMonth, totalUsers });
+  } catch (e) {
+    console.error("Ошибка /api/stats/mau:", e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Обработка WebSocket подключений
 wss.on("connection", (ws, req) => {
   const userId = new URLSearchParams(req.url.slice(1)).get("userId");
@@ -389,23 +401,16 @@ bot.onText(/\/start(.*)/, async (msg, match) => {
       }
     }
 
-    // Подсчёт MAU (Monthly Active Users) — активные за последние 30 дней
-    let mauCount = 0;
+    // MAU — тот же подсчёт, что в getMauStats() (скрипт check-mau и API)
+    let mauDisplay = "—";
     try {
-      const monthAgo = new Date();
-      monthAgo.setDate(monthAgo.getDate() - 30);
-
-      mauCount = await User.countDocuments({
-        lastLogin: { $gte: monthAgo },
-      });
+      const { activeThisMonth } = await getMauStats();
+      mauDisplay = String(activeThisMonth);
     } catch (mauError) {
       console.error("Ошибка подсчёта MAU:", mauError);
     }
 
-    const statsSuffix =
-      mauCount > 0
-        ? `\n\n📊 Активных игроков за месяц (MAU): ${mauCount}`
-        : "";
+    const statsSuffix = `\n\n📊 Активных игроков за месяц (MAU): ${mauDisplay}`;
 
     // Отправка приветственного сообщения
     const baseWelcomeMessage = startParam.startsWith("ref_")
