@@ -597,20 +597,13 @@ router.put("/users/:id", async (req, res) => {
       });
     }
 
+    const gd = req.body.gameData;
     const update = {};
-
-    if (req.body.gameData) {
-      // Баланс не перезаписываем из запроса клиента — источник истины: addPassiveIncome, покупки, задания, админ (topup/reset)
-      // update["gameData.balance"] = req.body.gameData.balance;
-      update["gameData.passiveIncome"] = req.body.gameData.passiveIncome;
-
-      if (req.body.gameData.level) {
-        update["gameData.level.current"] = req.body.gameData.level.current;
-        update["gameData.level.progress"] = req.body.gameData.level.progress;
-        update["gameData.level.title"] = req.body.gameData.level.title;
-      }
+    if (gd.level) {
+      update["gameData.level.current"] = gd.level.current;
+      update["gameData.level.progress"] = gd.level.progress;
+      update["gameData.level.title"] = gd.level.title;
     }
-
     if (req.body.lastLogin) {
       update.lastLogin = new Date(req.body.lastLogin);
     }

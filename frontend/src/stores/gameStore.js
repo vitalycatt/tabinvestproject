@@ -732,7 +732,7 @@ export const useGameStore = defineStore("game", {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(minimalData),
+          body: JSON.stringify(fullData),
         });
 
         if (response.ok) {
