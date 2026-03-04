@@ -18,7 +18,12 @@
 ```
 tabinvestproject/
 ├── backend/          # API, бот, БД, cron
+│   ├── Dockerfile    # образ для деплоя (порт 3000)
+│   └── .dockerignore
 ├── frontend/         # Vue SPA (игровой клиент + админка)
+├── docker-compose.yml  # деплой бэкенда (сервис app на порту 3000)
+├── deploy.sh         # локальный скрипт деплоя
+├── deploy-server.sh  # скрипт на сервере (git pull + docker compose)
 ├── .gitignore        # общий для всего репо
 ├── .gitattributes    # нормализация переносов строк
 └── PROJECT_CONTEXT.md
@@ -32,7 +37,7 @@ tabinvestproject/
 
 - **Запуск:** `backend/` → `npm run dev` (nodemon) или `npm start` (production через `render-start.js`).
 - **Главный файл:** `backend/bot.js` — создаёт Express-приложение, подключает БД, маршруты, WebSocket, Telegram webhook, cron.
-- **Конфиг:** `backend/config.js` — читает `backend/.env`. Обязательные переменные: `TELEGRAM_BOT_TOKEN`, `MONGODB_URI`, `WEBAPP_URL`. Остальное: `PORT`, `API_URL`, `APP_URL`, `ADMIN_*`, `JWT_SECRET`, `UPLOAD_DIR` (production), `PASSIVE_INCOME_CRON`, `NODE_APP_INSTANCE` (для pm2).
+- **Конфиг:** `backend/config.js` — читает `backend/.env`. Обязательные переменные: `TELEGRAM_BOT_TOKEN`, `MONGODB_URI`, `WEBAPP_URL`. Остальное: `PORT` (на проде 3000), `API_URL`, `APP_URL`, `ADMIN_*`, `JWT_SECRET`, `UPLOAD_DIR` (production), `PASSIVE_INCOME_CRON`.
 
 ### Подключение БД
 
@@ -104,7 +109,7 @@ ID пользователя на фронте берётся из Telegram WebAp
 
 ### Работа с API
 
-- **apiService** (`services/apiService.js`) — единая точка запросов. Base URL из `import.meta.env.VITE_API_BASE` (в dev часто `http://localhost:3000`).
+- **apiService** (`services/apiService.js`) — единая точка запросов. Base URL из `import.meta.env.VITE_API_BASE` (в dev и на проде бэкенд на порту 3000).
   - Методы: getUser, tap, regenerateEnergy, updateUserBalance, задачи, продукты, инвестиции, уведомления, админ (login, getAllUsers, blockUser, resetUserProgress и т.д.).
 - Дополнительно: `GameSettingsService`, `StorageService` (localStorage), `telegramService`, `referralService`, `userService`.
 
@@ -145,4 +150,6 @@ ID пользователя на фронте берётся из Telegram WebAp
 
 - **Backend:** в `backend/` задать в `.env` `MONGODB_URI` (например локальный MongoDB), затем `npm run dev`.
 - **Frontend:** в `frontend/` задать в `.env` `VITE_API_BASE=http://localhost:3000` (и при необходимости `VITE_WS_URL=ws://localhost:3000`), затем `npm run dev`.
+
+**Деплой на прод:** см. [DEPLOY.md](DEPLOY.md). Бэкенд разворачивается через Docker в `/root/gitserver-app`, один порт **3000**; фронт собирается локально и копируется на сервер.
 - Для полной игры нужен реальный или тестовый Telegram Bot и открытие WebApp в клиенте Telegram (или эмуляция `window.Telegram.WebApp`).

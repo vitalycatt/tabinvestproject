@@ -3,10 +3,10 @@
 ## Общая схема
 
 - **Фронтенд (Vue/Vite):** собирается **локально** на машине разработчика, готовый каталог `frontend/dist/` заливается на сервер в каталог статики (путь задаётся в `deploy.sh` через `DEPLOY_FRONT_DIR`).
-- **Бэкенд (Node):** разворачивается **на сервере** из Git-репозитория; зависимости ставятся только для `backend/`, процесс запускается через PM2.
-- **Сайт по домену:** раздаёт **nginx** (статика из каталога фронта + проксирование API на бэкенд).
+- **Бэкенд (Node):** разворачивается **на сервере** через **Docker**. Код берётся из Git-репозитория в каталоге `/root/gitserver-app`; образ собирается из `backend/`, контейнер слушает **порт 3000**.
+- **Сайт по домену:** раздаёт **nginx** (статика из каталога фронта + проксирование API на бэкенд на порт 3000).
 
-На сервере **не** выполняется `npm install` по всему монорепо и **не** собирается фронт — это сделано из-за ограничений по памяти на сервере.
+На сервере **не** выполняется установка зависимостей Node вручную и **не** собирается фронт — бэкенд работает в контейнере, фронт собирается локально и копируется по rsync.
 
 ---
 
@@ -20,11 +20,10 @@
 
 ### На сервере
 
-- Клон репозитория в каталоге приложения (в `deploy-server.sh` и в `deploy.sh` по умолчанию используется `/root/gitserver-app`), ветка `main`
-- Node.js (на сервере используется nvm; в `deploy-server.sh` прописан полный путь к `npm`)
-- PM2: процесс `render-start`, рабочая директория — `backend/`, точка входа `render-start.js`
-- Каталог статики фронта — отдаётся nginx (путь задаётся в `deploy.sh` как `DEPLOY_FRONT_DIR`)
-- Бэкенд слушает порт из `backend/.env` (переменная `PORT`); на сервере порт 3000 может быть занят другими сервисами — при необходимости укажите другой порт в `.env` и настройте nginx
+- Клон репозитория в каталоге `/root/gitserver-app`, ветка `main`
+- Docker и Docker Compose (для сборки и запуска контейнера бэкенда)
+- Каталог статики фронта — отдаётся nginx (путь задаётся в `deploy.sh` как `DEPLOY_FRONT_DIR`, по умолчанию `/var/www/tabinvestproject.ru/frontend`)
+- Бэкенд слушает **порт 3000** (переменная `PORT=3000` в `backend/.env` на сервере)
 - Файл `backend/.env` на сервере создаётся и редактируется вручную, в репозиторий не коммитится
 
 ---
@@ -57,9 +56,11 @@ npm run deploy
 1. Собирает фронт: `npm run build:frontend` (используется `frontend/.env.production`).
 2. Копирует `frontend/dist/` на сервер через `rsync` в каталог статики.
 3. По SSH выполняет на сервере `deploy-server.sh`, который:
-   - делает `git pull origin main`;
-   - в каталоге `backend/` выполняет `npm ci --omit=dev`;
-   - перезапускает PM2: `pm2 restart render-start`.
+   - делает `git pull origin main` в `/root/gitserver-app`;
+   - собирает образ приложения: `docker compose build --no-cache app`;
+   - запускает контейнер: `docker compose up -d app`.
+
+Бэкенд в контейнере слушает порт **3000**; nginx должен проксировать API на `http://127.0.0.1:3000`.
 
 ### 3. Переменные для деплоя
 
@@ -83,7 +84,10 @@ export DEPLOY_FRONT_DIR="/var/www/другой-сайт/frontend"
 | Файл | Назначение |
 |------|------------|
 | `deploy.sh` | Запускается **локально**: сборка фронта, rsync, вызов по SSH `deploy-server.sh`. |
-| `deploy-server.sh` | Выполняется **на сервере**: git pull, установка зависимостей только backend, перезапуск PM2. |
+| `deploy-server.sh` | Выполняется **на сервере**: git pull, сборка и запуск контейнера через `docker compose`. |
+| `docker-compose.yml` | Описание сервиса `app`: сборка из `backend/`, порт 3000, volume для uploads. |
+| `backend/Dockerfile` | Сборка образа бэкенда (Node 18, запуск `node render-start.js`). |
+| `backend/.dockerignore` | Исключения при сборке образа (node_modules, .env, uploads и т.д.). |
 | `frontend/.env.production` | Переменные для **сборки** фронта под прод (VITE_API_BASE, VITE_WS_URL). Можно коммитить. |
 | `frontend/.env` | Переменные для локальной разработки (например localhost). В `.gitignore` не попадает в репо. |
 | `backend/.env` | Секреты и настройки бэкенда; на сервере создаётся вручную, в Git не коммитится. |
@@ -92,16 +96,11 @@ export DEPLOY_FRONT_DIR="/var/www/другой-сайт/frontend"
 
 ## Если что-то пошло не так
 
-- **На проде в API нет полей `activeThisMonth` / `totalBalance` в `data.stats`** — чаще всего на сервере крутится **старая версия кода** (процесс не перезапущен после деплоя). Что проверить:
-  1. **Заголовок ответа** — запрос к `GET /api/admin/users?page=1&limit=1` должен вернуть заголовок `X-Admin-Users-Stats: v2`. В браузере он виден только если CORS разрешает его (в бэкенде настроено `exposedHeaders: ['X-Admin-Users-Stats']`). Если в браузере заголовка не видно — на сервере проверьте напрямую бэкенд (подставьте порт из `backend/.env`): `curl -sI "http://127.0.0.1:PORT/api/admin/users?page=1&limit=1"` и поищите в выводе `X-Admin-Users-Stats`. Если там заголовок есть, а через домен нет — возможно, nginx не проксирует кастомные заголовки. Если и в curl заголовка нет — крутится старая версия кода, перезапустите PM2.
-  2. **Файлы на сервере** (подставьте свой `APP_DIR`, по умолчанию `/root/gitserver-app`):
-     ```bash
-     grep -n "activeThisMonth\|totalBalance" /root/gitserver-app/backend/routes/adminRoutes.js
-     ```
-     Должны быть строки с `activeThisMonth` и `totalBalance`. Если их нет — проверьте ветку (`git branch`), выполните `git pull origin main`, снова проверьте и перезапустите: `pm2 restart render-start --update-env`.
-  3. **Перезапуск после pull** — после `git pull` обязательно выполняется `pm2 restart render-start` в `deploy-server.sh`; при ручном обновлении кода перезапуск тоже нужен.
-  4. В ответе API поля дублируются: `data.stats.activeThisMonth`, `data.stats.totalBalance` и на верхнем уровне `data`: `data.activeThisMonth`, `data.totalBalance` — фронт может брать из любого места.
-- **«npm: command not found» при деплое** — в `deploy-server.sh` используется полный путь к `npm` (из nvm). Если на сервере сменили версию Node, обновить этот путь (на сервере выполнить `which npm` и подставить в скрипт).
-- **Сайт не открывается по домену** — проверить nginx: `systemctl status nginx`. Убедиться, что конфиг сайта есть в `/etc/nginx/sites-available/` и включён через симлинк в `sites-enabled/`, в конфиге указаны правильные `root` для статики и `proxy_pass` на порт бэкенда.
+- **На проде в API нет полей `activeThisMonth` / `totalBalance` в `data.stats`** — чаще всего на сервере крутится **старая версия кода** (контейнер не пересобран после деплоя). Что проверить:
+  1. **Заголовок ответа** — запрос к `GET /api/admin/users?page=1&limit=1` должен вернуть заголовок `X-Admin-Users-Stats: v2`. На сервере: `curl -sI "http://127.0.0.1:3000/api/admin/users?page=1&limit=1"` — в выводе должен быть `X-Admin-Users-Stats`. Если заголовка нет — пересоберите контейнер: `cd /root/gitserver-app && docker compose build --no-cache app && docker compose up -d app`.
+  2. **Файлы на сервере** — убедиться, что в `/root/gitserver-app` актуальный код: `git branch`, `git pull origin main`, затем снова `docker compose build --no-cache app && docker compose up -d app`.
+  3. В ответе API поля дублируются: `data.stats.activeThisMonth`, `data.stats.totalBalance` и на верхнем уровне `data` — фронт может брать из любого места.
+- **Сайт не открывается по домену** — проверить nginx: `systemctl status nginx`. В конфиге сайта должны быть правильные `root` для статики и `proxy_pass` на `http://127.0.0.1:3000` для API.
 - **Фронт ходит на localhost** — пересобрать фронт при актуальном `frontend/.env.production` и снова запустить `./deploy.sh`.
-- **Порт бэкенда занят** — в `backend/.env` на сервере задать другой `PORT` и обновить конфиг nginx (proxy_pass на новый порт).
+- **Порт 3000 занят** — убедиться, что старый процесс (PM2 или контейнер из другого каталога) остановлен. Проверить: `ss -tlnp | grep 3000` или `docker ps` (контейнер `tabinvest_app` должен быть из `/root/gitserver-app`).
+- **Контейнер не стартует** — проверить логи: `docker compose logs app`. Убедиться, что в `backend/.env` на сервере заданы обязательные переменные (`TELEGRAM_BOT_TOKEN`, `MONGODB_URI`, `WEBAPP_URL`) и `PORT=3000`.
