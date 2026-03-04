@@ -4,7 +4,7 @@
  *   npm run check-mau
  *   или: node scripts/check-mau.js
  * Альтернатива — запрос к API (на сервере или с любого места):
- *   curl http://localhost:3000/api/stats/mau
+ *   curl http://localhost:3002/api/stats/mau
  *   или: curl https://ВАШ_ДОМЕН/api/stats/mau
  */
 import dotenv from "dotenv";

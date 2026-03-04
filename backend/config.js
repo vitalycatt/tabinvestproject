@@ -17,7 +17,7 @@ const config = {
   API_URL: process.env.API_URL,
   APP_URL: process.env.APP_URL,
   MONGODB_URI: process.env.MONGODB_URI,
-  PORT: process.env.PORT || 3000,
+  PORT: process.env.PORT || 3002,
   NODE_ENV: process.env.NODE_ENV || "development",
   ADMIN_LOGIN: process.env.ADMIN_LOGIN || "admin",
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "admin",
