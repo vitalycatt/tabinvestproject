@@ -1,0 +1,15 @@
+node_modules
+.env
+.env.*
+!.env.example
+uploads
+*.log
+.git
+.gitignore
+.dockerignore
+README.md
+*.md
+__tests__
+*.test.js
+*.spec.js
+.DS_Store
