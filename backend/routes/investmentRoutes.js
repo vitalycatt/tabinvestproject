@@ -334,7 +334,7 @@ router.post('/reorder', async (req, res) => {
 });
 
 // Константа: минуты в месяце (~30 дней) — для перевода дохода «в минуту» в «в месяц»
-const MINUTES_IN_MONTH = 30 * 24 * 60
+// baseIncome в карточке инвестиции задаётся в «доход в месяц»; calculateIncome возвращает месячное значение
 
 // Получение инвестиций по категории
 router.get('/category/:category/:telegramId', async (req, res) => {
@@ -363,9 +363,8 @@ router.get('/category/:category/:telegramId', async (req, res) => {
             const nextLevel = level + 1
 
             const nextCost = calculateCost(inv, nextLevel)
-            const nextIncomePerMin = calculateIncome(inv, nextLevel, userLevel)
-            // Для отображения «Пассивный доход в месяц» отдаём месячное значение (как в passiveIncome)
-            const nextIncome = nextIncomePerMin * MINUTES_IN_MONTH
+            // calculateIncome возвращает доход в месяц (baseIncome трактуется как «в месяц»)
+            const nextIncome = calculateIncome(inv, nextLevel, userLevel)
 
             return {
                 ...inv.toObject(), userLevel: level, currentIncome: income, nextCost, nextIncome
@@ -401,6 +400,7 @@ const getInvestmentLevel = (userInvestments, id) => {
 }
 
 
+// Возвращает месячный пассивный доход (baseIncome в карточке инвестиции — «доход в месяц» на базовом уровне)
 const calculateIncome = (investment, level, userLevel) => {
     const baseIncome = investment.baseIncome
     const type = investment.type || 'linear'
@@ -481,14 +481,11 @@ router.post('/buy/:userId/:productId', async (req, res) => {
         // уровень игрока с fallback (иначе undefined → NaN в формулах)
         const userLevel = user.gameData?.level?.current ?? 1
 
-        // считаем income от нового уровня (значение «в минуту», как в userRoutes)
+        // считаем месячный доход от нового уровня (calculateIncome возвращает «в месяц»)
         const income = calculateIncome(investment, newLevel, userLevel)
         const previousIncome = existing ? Number(existing.income ?? 0) : 0
 
-        const deltaIncomePerMin = income - previousIncome
-
-        // passiveIncome в БД — месячный; крон использует его как monthlyIncome
-        const deltaIncomeMonth = deltaIncomePerMin * MINUTES_IN_MONTH
+        const deltaIncomeMonth = income - previousIncome
 
         user.gameData.balance -= cost
         const newPassiveIncome = Number(user.gameData.passiveIncome || 0) + deltaIncomeMonth
@@ -515,8 +512,8 @@ router.post('/buy/:userId/:productId', async (req, res) => {
 
         await user.save()
 
-        // Для отображения на карточке отдаём доход в месяц (как на списке и в passiveIncome)
-        const incomeMonth = income * MINUTES_IN_MONTH
+        // income уже месячный
+        const incomeMonth = income
 
         return res.json({
             success: true,

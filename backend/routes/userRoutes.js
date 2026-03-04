@@ -194,6 +194,7 @@ router.post('/:id/investments/purchase', async (req, res) => {
       return Math.round(baseCost * Math.pow(m, diff));
     };
 
+    // Возвращает месячный пассивный доход (baseIncome — «доход в месяц» на базовом уровне)
     const calcIncome = (investment, lvl, playerLvl) => {
       const baseIncome = Number(investment.baseIncome || 0);
       const mult = Number(investment.multiplier || 1.0);
@@ -231,16 +232,12 @@ router.post('/:id/investments/purchase', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Недостаточно монет', data: { balance } });
     }
 
-    // 7) Пересчёт пассива инкрементально
+    // 7) Пересчёт пассива инкрементально (calcIncome возвращает месячный доход)
     const prevIncome = calcIncome(inv, currentLevel, playerLevel);
     const newIncome = calcIncome(inv, newLevel, playerLevel);
-    const deltaIncome = newIncome - prevIncome;
+    const deltaIncomeMonth = newIncome - prevIncome;
 
-    // 7a) Конвертируем в месячный доход
-    const MINUTES_IN_MONTH = 30 * 24 * 60; // стандартный месяц ~30 дней
-    const deltaIncomeMonth = deltaIncome * MINUTES_IN_MONTH;
-
-    console.log(`[purchaseInvestment][formula] deltaIncome=${deltaIncome} per min => deltaIncomeMonth=${deltaIncomeMonth}`);
+    console.log(`[purchaseInvestment][formula] deltaIncomeMonth=${deltaIncomeMonth}`);
 
     // 8) Применяем изменения
     g.balance = balance - costNow;
