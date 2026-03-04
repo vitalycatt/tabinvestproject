@@ -431,17 +431,10 @@ router.get("/users", async (req, res) => {
     );
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const monthAgo = new Date(now);
-    monthAgo.setDate(monthAgo.getDate() - 30);
 
     const activeToday = await User.countDocuments({
       ...filterQuery,
       lastLogin: { $gte: todayStart },
-    });
-
-    const activeThisMonth = await User.countDocuments({
-      ...filterQuery,
-      lastLogin: { $gte: monthAgo },
     });
 
     const newThisWeek = await User.countDocuments({
@@ -455,42 +448,12 @@ router.get("/users", async (req, res) => {
       {
         $group: {
           _id: null,
-          totalIncome: {
-            $sum: {
-              $convert: {
-                input: "$gameData.passiveIncome",
-                to: "double",
-                onError: 0,
-                onNull: 0,
-              },
-            },
-          },
+          totalIncome: { $sum: { $ifNull: ["$gameData.passiveIncome", 0] } },
         },
       },
     ]);
 
     const totalIncome = totalIncomeResult[0]?.totalIncome ?? 0;
-
-    const totalBalanceResult = await User.aggregate([
-      { $match: filterQuery },
-      {
-        $group: {
-          _id: null,
-          totalBalance: {
-            $sum: {
-              $convert: {
-                input: "$gameData.balance",
-                to: "double",
-                onError: 0,
-                onNull: 0,
-              },
-            },
-          },
-        },
-      },
-    ]);
-
-    const totalBalance = totalBalanceResult[0]?.totalBalance ?? 0;
 
     const formattedUsers = users.map((user) => ({
       id: user.telegramId,
@@ -506,20 +469,13 @@ router.get("/users", async (req, res) => {
       blocked: user.blocked || false,
     }));
 
-    // Единый источник числовых значений — JSON.stringify не опускает ключи (избегаем undefined)
-    const activeThisMonthVal = Number(activeThisMonth) || 0;
-    const totalBalanceVal = Number(totalBalance) || 0;
-
     const stats = {
       total: Number(totalUsers) || 0,
       activeToday: Number(activeToday) || 0,
-      activeThisMonth: activeThisMonthVal,
       newThisWeek: Number(newThisWeek) || 0,
       totalIncome: Number(totalIncome) || 0,
-      totalBalance: totalBalanceVal,
     };
 
-    res.set("X-Admin-Users-Stats", "v2"); // маркер актуального обработчика (есть activeThisMonth, totalBalance)
     res.json({
       success: true,
       data: {
@@ -531,8 +487,6 @@ router.get("/users", async (req, res) => {
           pageSize: Number(limit),
         },
         stats,
-        activeThisMonth: activeThisMonthVal,
-        totalBalance: totalBalanceVal,
       },
     });
   } catch (error) {

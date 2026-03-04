@@ -333,6 +333,9 @@ router.post('/reorder', async (req, res) => {
     }
 });
 
+// Константа: минуты в месяце (~30 дней) — для перевода дохода «в минуту» в «в месяц»
+const MINUTES_IN_MONTH = 30 * 24 * 60
+
 // Получение инвестиций по категории
 router.get('/category/:category/:telegramId', async (req, res) => {
     try {
@@ -349,7 +352,7 @@ router.get('/category/:category/:telegramId', async (req, res) => {
         }).sort({order: 1})
 
         const purchased = user.gameData.investments.purchased || []
-        const userLevel = user.gameData.level.current || 1
+        const userLevel = user.gameData?.level?.current ?? 1
 
         const enriched = investments.map(inv => {
             const existing = purchased.find(item => item.id === inv._id.toString())
@@ -360,7 +363,9 @@ router.get('/category/:category/:telegramId', async (req, res) => {
             const nextLevel = level + 1
 
             const nextCost = calculateCost(inv, nextLevel)
-            const nextIncome = calculateIncome(inv, nextLevel, userLevel)
+            const nextIncomePerMin = calculateIncome(inv, nextLevel, userLevel)
+            // Для отображения «Пассивный доход в месяц» отдаём месячное значение (как в passiveIncome)
+            const nextIncome = nextIncomePerMin * MINUTES_IN_MONTH
 
             return {
                 ...inv.toObject(), userLevel: level, currentIncome: income, nextCost, nextIncome
@@ -473,21 +478,24 @@ router.post('/buy/:userId/:productId', async (req, res) => {
             return res.status(400).json({message: 'Not enough balance'})
         }
 
-        // считаем income ЧИСТО от нового уровня
-        const income = calculateIncome(
-            investment,
-            newLevel,
-            user.gameData.level.current
-        )
+        // уровень игрока с fallback (иначе undefined → NaN в формулах)
+        const userLevel = user.gameData?.level?.current ?? 1
 
-        const previousIncome = existing ? existing.income : 0
+        // считаем income от нового уровня (значение «в минуту», как в userRoutes)
+        const income = calculateIncome(investment, newLevel, userLevel)
+        const previousIncome = existing ? Number(existing.income ?? 0) : 0
+
+        const deltaIncomePerMin = income - previousIncome
+
+        // passiveIncome в БД — месячный; крон использует его как monthlyIncome
+        const deltaIncomeMonth = deltaIncomePerMin * MINUTES_IN_MONTH
 
         user.gameData.balance -= cost
+        const newPassiveIncome = Number(user.gameData.passiveIncome || 0) + deltaIncomeMonth
+        user.gameData.passiveIncome = Math.max(0, newPassiveIncome)
 
-        // корректная разница
-        user.gameData.passiveIncome += (income - previousIncome)
-
-        if (user.gameData.passiveIncome > user.gameData.stats.maxPassiveIncome) {
+        if (user.gameData.passiveIncome > (user.gameData.stats?.maxPassiveIncome || 0)) {
+            if (!user.gameData.stats) user.gameData.stats = {}
             user.gameData.stats.maxPassiveIncome = user.gameData.passiveIncome
         }
 
@@ -507,12 +515,15 @@ router.post('/buy/:userId/:productId', async (req, res) => {
 
         await user.save()
 
+        // Для отображения на карточке отдаём доход в месяц (как на списке и в passiveIncome)
+        const incomeMonth = income * MINUTES_IN_MONTH
+
         return res.json({
             success: true,
             balance: user.gameData.balance,
             passiveIncome: user.gameData.passiveIncome,
             newLevel,
-            income,
+            income: incomeMonth,
             nextCost: calculateCost(investment, newLevel + 1)
         })
 

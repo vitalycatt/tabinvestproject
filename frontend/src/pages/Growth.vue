@@ -136,23 +136,19 @@ const loadInvestments = async (category) => {
       category
     );
 
-    if (response && response.success && Array.isArray(response.data)) {
+    if (response?.success && Array.isArray(response.data)) {
       currentInvestments.value = response.data;
       logger.log(
         "Инвестиции успешно загружены:",
         currentInvestments.value.length
       );
+    } else if (response && Array.isArray(response.data)) {
+      // Ответ без success или success: false, но data есть — используем data
+      currentInvestments.value = response.data;
+      logger.log("Инвестиции загружены (ответ без success):", currentInvestments.value.length);
     } else {
       logger.error("Неверный формат ответа API:", response);
-      if (Array.isArray(response)) {
-        // Некоторые API могут возвращать массив напрямую
-        currentInvestments.value = response;
-      } else if (response && Array.isArray(response.data)) {
-        // Или без флага success
-        currentInvestments.value = response.data;
-      } else {
-        throw new Error("Некорректный формат данных от сервера");
-      }
+      throw new Error("Некорректный формат данных от сервера");
     }
   } catch (err) {
     logger.error("Ошибка загрузки инвестиций:", err);
