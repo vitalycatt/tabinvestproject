@@ -410,7 +410,7 @@ bot.onText(/\/start(.*)/, async (msg, match) => {
       console.error("Ошибка подсчёта MAU:", mauError);
     }
 
-    const statsSuffix = `\n\n📊 Активных игроков за месяц (MAU): ${mauDisplay}`;
+    const statsSuffix = `\n\n📊 Активных пользователей за месяц: ${mauDisplay}`;
 
     // Отправка приветственного сообщения
     const baseWelcomeMessage = startParam.startsWith("ref_")
