@@ -41,50 +41,85 @@ router.post('/:id/addPassiveIncome', async (req, res) => {
     const { id } = req.params;
     console.log(`[addPassiveIncome] request for user ${id} at ${new Date().toISOString()}`);
 
-    const user = await User.findOne({ telegramId: id });
+    // .lean() — сырой документ из MongoDB, без дефолтов Mongoose (иначе gameData.balance может быть undefined при отсутствии в БД)
+    let user = await User.findOne({ telegramId: id }).lean();
     if (!user) {
       console.warn(`[addPassiveIncome] user ${id} not found`);
       return res.status(404).json({ success: false, message: 'Пользователь не найден' });
     }
 
-    const passiveIncome = Number(user.passiveIncome || 0); // месячный доход
+    // Миграция: старый код писал balance в корень. Переносим в gameData.balance только если в корне положительное значение.
+    // Не перезаписываем gameData.balance нулём — иначе теряется текущий баланс (например после GET с 100, затем addPassiveIncome обнулял).
+    const rootBalance = user.balance != null && user.balance !== undefined ? Number(user.balance) : null;
+    const g = user.gameData || {};
+    if (rootBalance !== null && (g.balance == null || g.balance === 0)) {
+      if (rootBalance > 0) {
+        await User.updateOne(
+          { _id: user._id },
+          {
+            $set: { 'gameData.balance': rootBalance },
+            $unset: { balance: '' }
+          }
+        );
+        if (g && typeof g === 'object') g.balance = rootBalance;
+        else { user.gameData = user.gameData || {}; user.gameData.balance = rootBalance; }
+      } else {
+        await User.updateOne({ _id: user._id }, { $unset: { balance: '' } });
+      }
+    }
+
+    // Пассивный доход хранится в gameData (месячный)
+    const passiveIncome = Number(g.passiveIncome || 0);
     if (!passiveIncome || passiveIncome <= 0) {
-      return res.json({ success: true, added: 0, balance: user.balance || 0 });
+      return res.json({ success: true, added: 0, balance: g.balance || 0 });
     }
 
     const now = Date.now();
     const lastTime = user.lastPassiveIncomeAt
-      ? user.lastPassiveIncomeAt.getTime()
-      : (user.createdAt ? user.createdAt.getTime() : now);
+      ? new Date(user.lastPassiveIncomeAt).getTime()
+      : (user.createdAt ? new Date(user.createdAt).getTime() : now);
 
     const secondsPassed = Math.floor((now - lastTime) / 1000);
     if (secondsPassed <= 0) {
-      return res.json({ success: true, added: 0, balance: user.balance || 0 });
+      return res.json({ success: true, added: 0, balance: g.balance || 0 });
     }
 
     const SECONDS_IN_MONTH = 30 * 24 * 60 * 60;
     const incomeToAdd = passiveIncome * (secondsPassed / SECONDS_IN_MONTH);
 
-    // Атомарное обновление
+    // Текущий баланс: gameData.balance или корневой balance (миграция), иначе 0. Не используем $inc — при отсутствии поля MongoDB затирает баланс.
+    const currentBalance = Number(g.balance ?? rootBalance ?? 0);
+    const newBalanceValue = currentBalance + incomeToAdd;
+
+    // Обновляем только если баланс в БД совпадает с прочитанным — не перезаписываем правку админки (topup) или другого запроса
+    const balanceMatch = currentBalance === 0
+      ? { $or: [{ 'gameData.balance': { $in: [0, null] } }, { 'gameData.balance': { $exists: false } }] }
+      : { 'gameData.balance': currentBalance };
+
     const updated = await User.findOneAndUpdate(
       {
         _id: user._id,
-        lastPassiveIncomeAt: user.lastPassiveIncomeAt
+        lastPassiveIncomeAt: user.lastPassiveIncomeAt,
+        ...balanceMatch
       },
       {
-        $inc: { balance: incomeToAdd },
-        $set: { lastPassiveIncomeAt: new Date(now) }
+        $set: {
+          'gameData.balance': newBalanceValue,
+          lastPassiveIncomeAt: new Date(now)
+        }
       },
       { new: true }
     );
 
     if (!updated) {
-      const fresh = await User.findById(user._id);
-      return res.json({ success: true, added: 0, balance: fresh.balance });
+      const fresh = await User.findById(user._id).lean();
+      const freshBalance = fresh?.gameData?.balance ?? fresh?.balance ?? 0;
+      return res.json({ success: true, added: 0, balance: Number(freshBalance) });
     }
 
-    console.log(`[addPassiveIncome] user ${id} +${incomeToAdd.toFixed(2)} (sec=${secondsPassed}) -> new balance=${updated.balance.toFixed(2)}`);
-    return res.json({ success: true, added: incomeToAdd, balance: updated.balance });
+    const newBalance = Number(updated.gameData?.balance ?? updated.balance ?? 0);
+    console.log(`[addPassiveIncome] user ${id} +${incomeToAdd.toFixed(2)} (sec=${secondsPassed}) -> new balance=${newBalance.toFixed(2)}`);
+    return res.json({ success: true, added: incomeToAdd, balance: newBalance });
 
   } catch (err) {
     console.error('[addPassiveIncome] error:', err);

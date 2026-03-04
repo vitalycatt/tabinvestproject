@@ -145,7 +145,10 @@ const loadInvestments = async (category) => {
     } else if (response && Array.isArray(response.data)) {
       // Ответ без success или success: false, но data есть — используем data
       currentInvestments.value = response.data;
-      logger.log("Инвестиции загружены (ответ без success):", currentInvestments.value.length);
+      logger.log(
+        "Инвестиции загружены (ответ без success):",
+        currentInvestments.value.length
+      );
     } else {
       logger.error("Неверный формат ответа API:", response);
       throw new Error("Некорректный формат данных от сервера");
@@ -403,17 +406,20 @@ onMounted(async () => {
       );
 
       if (res.success) {
-        // Добавляем серверно начисленный доход к балансу
-        store.balance += res.added;
+        const serverBalance = Number(res.balance ?? store.balance + (res.added || 0));
+        const added = Number(res.added || 0);
+        // Не перезаписываем баланс меньшим значением: только если сервер вернул не меньше текущего или явно начислил и новый баланс правдоподобен
+        const isReasonable = serverBalance >= store.balance || (added > 0 && serverBalance >= store.balance + added * 0.5);
+        if (isReasonable) {
+          store.balance = serverBalance;
+        }
         logger.log(
           "Пассивный доход начислен серверно:",
-          res.added,
+          added,
           "→ новый баланс:",
           store.balance
         );
-
-        // Сбрасываем локальный пассивный доход, чтобы не начислялся повторно
-        store.passiveIncome = 0;
+        // Пассивный доход (месячная ставка) не обнуляем — он начисляется по времени, а не «разово»
       }
     } catch (err) {
       logger.error("Ошибка при начислении пассивного дохода серверно:", err);

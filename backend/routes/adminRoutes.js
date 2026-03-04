@@ -600,7 +600,8 @@ router.put("/users/:id", async (req, res) => {
     const update = {};
 
     if (req.body.gameData) {
-      update["gameData.balance"] = req.body.gameData.balance;
+      // Баланс не перезаписываем из запроса клиента — источник истины: addPassiveIncome, покупки, задания, админ (topup/reset)
+      // update["gameData.balance"] = req.body.gameData.balance;
       update["gameData.passiveIncome"] = req.body.gameData.passiveIncome;
 
       if (req.body.gameData.level) {
