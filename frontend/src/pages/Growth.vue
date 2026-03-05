@@ -319,11 +319,15 @@ const handleInvestment = async (investment) => {
 
     console.log(data);
 
+    // После покупки хотим показывать доход следующего уровня (next level),
+    // поэтому используем nextIncome из ответа, а при его отсутствии — income как fallback.
+    const nextIncomeForCard = data.nextIncome ?? data.income;
+
     currentInvestments.value = currentInvestments.value.map((invest) =>
       invest._id === investment._id
         ? {
             ...invest,
-            nextIncome: data.income,
+            nextIncome: nextIncomeForCard,
             userLevel: data.newLevel,
             nextCost: data.nextCost,
           }

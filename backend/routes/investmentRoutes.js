@@ -514,6 +514,8 @@ router.post('/buy/:userId/:productId', async (req, res) => {
 
         // income уже месячный
         const incomeMonth = income
+        // Доход на следующий уровень (для отображения в карточке как «следующий апгрейд»)
+        const nextLevelIncome = calculateIncome(investment, newLevel + 1, userLevel)
 
         return res.json({
             success: true,
@@ -521,6 +523,7 @@ router.post('/buy/:userId/:productId', async (req, res) => {
             passiveIncome: user.gameData.passiveIncome,
             newLevel,
             income: incomeMonth,
+            nextIncome: nextLevelIncome,
             nextCost: calculateCost(investment, newLevel + 1)
         })
 
