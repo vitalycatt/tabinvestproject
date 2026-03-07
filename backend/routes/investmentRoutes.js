@@ -363,8 +363,8 @@ router.get('/category/:category/:telegramId', async (req, res) => {
             const nextLevel = level + 1
 
             const nextCost = calculateCost(inv, nextLevel)
-            // calculateIncome возвращает доход в месяц (baseIncome трактуется как «в месяц»)
-            const nextIncome = calculateIncome(inv, nextLevel, userLevel)
+            // Суммарный доход карточки после следующего апгрейда (уровень 1 + 2 + ... + nextLevel)
+            const nextIncome = getTotalIncomeForCard(inv, nextLevel, userLevel)
 
             return {
                 ...inv.toObject(), userLevel: level, currentIncome: income, nextCost, nextIncome
@@ -430,6 +430,15 @@ const calculateIncome = (investment, level, userLevel) => {
     }
 }
 
+// Сумма пассивного дохода карточки по всем уровням с 1 по level (1 + 2 + ... + level)
+const getTotalIncomeForCard = (investment, level, userLevel) => {
+    let total = 0
+    for (let l = 1; l <= level; l++) {
+        total += calculateIncome(investment, l, userLevel)
+    }
+    return total
+}
+
 
 const calculateCost = (investment, level) => {
     // Базовая стоимость
@@ -481,8 +490,8 @@ router.post('/buy/:userId/:productId', async (req, res) => {
         // уровень игрока с fallback (иначе undefined → NaN в формулах)
         const userLevel = user.gameData?.level?.current ?? 1
 
-        // считаем месячный доход от нового уровня (calculateIncome возвращает «в месяц»)
-        const income = calculateIncome(investment, newLevel, userLevel)
+        // Суммируем доход по всем уровням карточки (уровень 1 + уровень 2 + ... + newLevel)
+        const income = getTotalIncomeForCard(investment, newLevel, userLevel)
         const previousIncome = existing ? Number(existing.income ?? 0) : 0
 
         const deltaIncomeMonth = income - previousIncome
@@ -512,10 +521,10 @@ router.post('/buy/:userId/:productId', async (req, res) => {
 
         await user.save()
 
-        // income уже месячный
+        // income — сумма дохода по уровням 1..newLevel (месячный)
         const incomeMonth = income
-        // Доход на следующий уровень (для отображения в карточке как «следующий апгрейд»)
-        const nextLevelIncome = calculateIncome(investment, newLevel + 1, userLevel)
+        // Суммарный доход карточки после следующего апгрейда (1 + 2 + ... + (newLevel+1)) для отображения в карточке
+        const nextLevelIncome = getTotalIncomeForCard(investment, newLevel + 1, userLevel)
 
         return res.json({
             success: true,
