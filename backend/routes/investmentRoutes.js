@@ -363,8 +363,8 @@ router.get('/category/:category/:telegramId', async (req, res) => {
             const nextLevel = level + 1
 
             const nextCost = calculateCost(inv, nextLevel)
-            // Суммарный доход карточки после следующего апгрейда (уровень 1 + 2 + ... + nextLevel)
-            const nextIncome = getTotalIncomeForCard(inv, nextLevel, userLevel)
+            // В карточке показываем только доход следующего уровня (не сумму по всем уровням)
+            const nextIncome = calculateIncome(inv, nextLevel, userLevel)
 
             return {
                 ...inv.toObject(), userLevel: level, currentIncome: income, nextCost, nextIncome
@@ -521,10 +521,10 @@ router.post('/buy/:userId/:productId', async (req, res) => {
 
         await user.save()
 
-        // income — сумма дохода по уровням 1..newLevel (месячный)
+        // income — сумма дохода по уровням 1..newLevel (месячный), хранится для общего passiveIncome
         const incomeMonth = income
-        // Суммарный доход карточки после следующего апгрейда (1 + 2 + ... + (newLevel+1)) для отображения в карточке
-        const nextLevelIncome = getTotalIncomeForCard(investment, newLevel + 1, userLevel)
+        // В карточке показываем только доход следующего уровня (не сумму по всем уровням)
+        const nextLevelIncome = calculateIncome(investment, newLevel + 1, userLevel)
 
         return res.json({
             success: true,
