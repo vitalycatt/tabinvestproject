@@ -33,6 +33,7 @@
     <!-- Основной контент -->
     <div class="admin-content" :class="{ 'sidebar-closed': !isSidebarOpen }">
       <UsersSection v-if="currentTab === 'users'" />
+      <TransactionsSection v-if="currentTab === 'transactions'" />
       <TasksSection v-if="currentTab === 'tasks'" />
       <ProductsSection v-if="currentTab === 'products'" />
       <NotificationsSection v-if="currentTab === 'notifications'" />
@@ -50,12 +51,14 @@ import ProductsSection from './ProductsSection.vue'
 import NotificationsSection from './NotificationsSection.vue'
 import SettingsSection from './SettingsSection.vue'
 import StatsSection from './StatsSection.vue'
+import TransactionsSection from './TransactionsSection.vue'
 
 const currentTab = ref('users')
 const isSidebarOpen = ref(window.innerWidth > 768)
 
 const tabs = [
   { id: 'users', name: 'Пользователи', icon: 'fas fa-users' },
+  { id: 'transactions', name: 'Транзакции', icon: 'fas fa-exchange-alt' },
   { id: 'tasks', name: 'Задания', icon: 'fas fa-tasks' },
   { id: 'products', name: 'Продукты', icon: 'fas fa-box' },
   { id: 'notifications', name: 'Уведомления', icon: 'fas fa-bell' },

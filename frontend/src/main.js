@@ -67,6 +67,11 @@ const routes = [
     meta: { requiresOnboarding: true },
   },
   {
+    path: "/transfer",
+    component: () => import("@/pages/Transfer.vue"),
+    meta: { requiresOnboarding: true },
+  },
+  {
     path: "/admin",
     component: AdminLayout,
     children: [

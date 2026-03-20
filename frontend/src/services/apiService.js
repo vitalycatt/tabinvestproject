@@ -996,6 +996,61 @@ export const ApiService = {
   async getStats() {
     return request("/api/admin/stats");
   },
+
+  // ПЕРЕВОДЫ (P2P)
+  // ===============
+
+  async searchTransferUser(query) {
+    return request("/api/transfer/search", "POST", { query });
+  },
+
+  async sendTransfer(senderTelegramId, receiverTelegramId, amount) {
+    return request("/api/transfer/send", "POST", {
+      senderTelegramId,
+      receiverTelegramId,
+      amount,
+    });
+  },
+
+  async getTransferHistory(telegramId, page = 1, limit = 20) {
+    const params = new URLSearchParams({
+      telegramId,
+      page: String(page),
+      limit: String(limit),
+    });
+    return request(`/api/transfer/history?${params}`);
+  },
+
+  // АДМИН: ТРАНЗАКЦИИ
+  // =================
+
+  async getAdminTransactions(params = {}) {
+    const queryParams = new URLSearchParams(
+      Object.entries(params)
+        .filter(
+          ([_, v]) => v !== undefined && v !== null && v !== ""
+        )
+        .map(([k, v]) => [k, String(v)])
+    ).toString();
+    return request(`/api/admin/transactions?${queryParams}`);
+  },
+
+  async getAdminTransactionStats() {
+    return request("/api/admin/transactions/stats");
+  },
+
+  async adjustUserBalance(userId, amount, reason, adminTelegramId) {
+    return request("/api/admin/user/balance", "POST", {
+      userId,
+      amount,
+      reason,
+      adminTelegramId,
+    });
+  },
+
+  async getAdminLogs(page = 1, limit = 50) {
+    return request(`/api/admin/logs?page=${page}&limit=${limit}`);
+  },
 };
 
 // src/services/apiService.js
