@@ -157,7 +157,9 @@ import { ApiService } from "../services/apiService";
 const adminStore = useAdminStore();
 const router = useRouter();
 
-const currentTab = ref("users");
+const VALID_TABS = ["users", "transactions", "tasks", "products", "investments", "notifications", "settings"];
+const savedTab = localStorage.getItem("admin_current_tab");
+const currentTab = ref(VALID_TABS.includes(savedTab) ? savedTab : "users");
 const isSidebarOpen = ref(window.innerWidth > 768);
 
 const tabs = [
@@ -176,6 +178,7 @@ const currentTabName = computed(() => {
 
 const switchTab = (tabId) => {
   currentTab.value = tabId;
+  localStorage.setItem("admin_current_tab", tabId);
   if (window.innerWidth <= 768) {
     isSidebarOpen.value = false;
   }
