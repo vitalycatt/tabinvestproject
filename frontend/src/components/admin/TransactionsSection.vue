@@ -227,7 +227,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ApiService } from '@/services/apiService'
 
 const subTab = ref('list')
@@ -371,6 +371,7 @@ async function adjustBalance() {
       adjustForm.userId = ''
       adjustForm.amount = null
       adjustForm.reason = ''
+      fetchLogs()
     } else {
       adjustError.value = res.message || 'Ошибка корректировки'
     }
@@ -397,6 +398,11 @@ onMounted(() => {
   fetchStats()
   fetchTx(1)
   fetchLogs()
+})
+
+watch(subTab, (tab) => {
+  if (tab === 'logs') fetchLogs()
+  if (tab === 'list') { fetchTx(1); fetchStats() }
 })
 </script>
 
