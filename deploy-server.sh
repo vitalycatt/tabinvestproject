@@ -7,7 +7,9 @@ APP_DIR="/root/gitserver-app"
 
 echo "📥 Updating repository..."
 cd "$APP_DIR"
-git pull origin main
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo "📥 Updating repository (branch: $BRANCH)..."
+git pull origin "$BRANCH"
 
 echo "🐳 Building and starting app container..."
 docker compose build --no-cache app

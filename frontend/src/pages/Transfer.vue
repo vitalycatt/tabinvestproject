@@ -450,8 +450,8 @@ onMounted(() => {
 <style scoped>
 .transfer-page {
   min-height: 100vh;
-  padding: 20px 16px 100px 16px;
-  background: var(--bg-color, #08070D);
+  padding: 100px 16px 100px 16px;
+  background: url("@/assets/images/bg.jpg") center top no-repeat;
   color: #fff;
 }
 
