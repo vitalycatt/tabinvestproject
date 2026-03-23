@@ -14,7 +14,7 @@ router.get('/settings', async (req, res) => {
                 maxLevel: 100,
                 baseIncome: 10,
                 energyRegenRate: 1,
-                maxEnergy: 1000,
+                maxEnergy: 100,
                 levelsConfig: {
                     expMultiplier: 1.2,
                     incomeMultiplier: 1.1

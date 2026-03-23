@@ -34,8 +34,8 @@ const UserSchema = new mongoose.Schema({
             default: 0
         },
         energy: {
-            current: { type: Number, default: 1000 },
-            max: { type: Number, default: 1000 },
+            current: { type: Number, default: 100 },
+            max: { type: Number, default: 100 },
             regenRate: { type: Number, default: 1 },
             lastRegenTime: { type: Number, default: () => Date.now() }
         },

@@ -152,8 +152,8 @@ onMounted(async () => {
   if (isDev) {
     logger.log('DEV режим — эмулируем локального пользователя');
     await store.syncFromServer(userId);
-    if (store._energyRegenTimerId === null) {
-      logger.log('Запускаем таймер регенерации энергии');
+    if (store._passiveIncomeTimerId === null) {
+      logger.log('Запускаем таймеры');
       store.startPassiveIncomeTimer();
     }
     return;
@@ -172,8 +172,8 @@ onMounted(async () => {
     await store.syncFromServer(userId);
     logger.log('Синхронизация с сервером завершена');
 
-    if (store._energyRegenTimerId === null) {
-      logger.log('Запускаем таймер регенерации энергии');
+    if (store._passiveIncomeTimerId === null) {
+      logger.log('Запускаем таймеры');
       store.startPassiveIncomeTimer();
     }
   } catch (err) {

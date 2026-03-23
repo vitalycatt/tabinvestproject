@@ -8,6 +8,8 @@ const gameSettingsSchema = new mongoose.Schema({
         type: Number, default: 100
     }, energyRegenRate: {
         type: Number, default: 1
+    }, energyRegenIntervalMs: {
+        type: Number, default: 86400000
     }, incomeMultiplier: {
         type: Number, default: 1
     }, expMultiplier: {

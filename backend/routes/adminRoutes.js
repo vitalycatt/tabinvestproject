@@ -507,6 +507,31 @@ router.get("/users/:id", async (req, res) => {
         .json({ success: false, message: "Пользователь не найден" });
     }
 
+    const NEW_MAX_ENERGY = 100;
+    let needSave = false;
+
+    if (user.gameData.energy.max > NEW_MAX_ENERGY) {
+      user.gameData.energy.max = NEW_MAX_ENERGY;
+      if (user.gameData.energy.current > NEW_MAX_ENERGY) {
+        user.gameData.energy.current = NEW_MAX_ENERGY;
+      }
+      needSave = true;
+    }
+
+    const now = Date.now();
+    const REGEN_INTERVAL = 24 * 60 * 60 * 1000;
+    const elapsed = now - (user.gameData.energy.lastRegenTime || 0);
+
+    if (elapsed >= REGEN_INTERVAL) {
+      user.gameData.energy.current = user.gameData.energy.max;
+      user.gameData.energy.lastRegenTime = now;
+      needSave = true;
+    }
+
+    if (needSave) {
+      await user.save();
+    }
+
     res.json({ success: true, data: user });
   } catch (error) {
     console.error("Ошибка получения пользователя:", error);
@@ -527,50 +552,40 @@ router.post("/users/:id/tap", async (req, res) => {
       });
     }
 
+    const NEW_MAX_ENERGY = 100;
+
+    if (user.gameData.energy.max > NEW_MAX_ENERGY) {
+      user.gameData.energy.max = NEW_MAX_ENERGY;
+      if (user.gameData.energy.current > NEW_MAX_ENERGY) {
+        user.gameData.energy.current = NEW_MAX_ENERGY;
+      }
+    }
+
+    const now = Date.now();
+    const REGEN_INTERVAL = 24 * 60 * 60 * 1000;
+    const elapsed = now - (user.gameData.energy.lastRegenTime || 0);
+
+    if (elapsed >= REGEN_INTERVAL) {
+      user.gameData.energy.current = user.gameData.energy.max;
+      user.gameData.energy.lastRegenTime = now;
+    }
+
+    await user.save();
+
+    if (user.gameData.energy.current < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Недостаточно энергии",
+        data: { gameData: user.gameData },
+      });
+    }
+
     const updatedUser = await User.findOneAndUpdate(
       { telegramId: user.telegramId },
       {
         $inc: {
           "gameData.balance": user.gameData.multipliers.tapValue,
           "gameData.energy.current": -1,
-        },
-      }
-    );
-
-    console.log(`Пользователь ${id} успешно обновлен`);
-    res.json({ success: true, data: updatedUser });
-  } catch (error) {
-    console.error("Ошибка обновления пользователя:", error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-router.post("/users/:id/regenerate-energy", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const user = await User.findOne({ telegramId: id });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "Пользователь не найден",
-      });
-    }
-
-    // Энергия уже на максимуме — возвращаем текущее состояние (200), чтобы фронт синхронизировался и не слал запросы снова
-    if (user.gameData.energy.current >= user.gameData.energy.max) {
-      return res.json({ success: true, data: user });
-    }
-
-    const updatedUser = await User.findOneAndUpdate(
-      { telegramId: id },
-      {
-        $inc: {
-          "gameData.energy.current": user.gameData.energy.regenRate,
-        },
-        $set: {
-          "gameData.energy.lastRegenTime": Date.now(),
         },
       },
       { new: true }
@@ -663,8 +678,8 @@ router.post("/users/actions", async (req, res) => {
           balance: 0,
           passiveIncome: 0,
           energy: {
-            current: 1000,
-            max: 1000,
+            current: 100,
+            max: 100,
             regenRate: 1,
             lastRegenTime: Date.now(),
           },

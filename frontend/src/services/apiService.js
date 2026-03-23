@@ -230,15 +230,6 @@ export const ApiService = {
     return data.data.gameData;
   },
 
-  async regenerateEnergy(userId) {
-    const data = await request(
-      `/api/admin/users/${userId}/regenerate-energy`,
-      "POST"
-    );
-
-    return data.data.gameData;
-  },
-
   /**
    * Создание нового продукта с изображением
    * @param {FormData} formData - данные продукта с файлом

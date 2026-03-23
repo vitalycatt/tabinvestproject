@@ -22,8 +22,7 @@ export const StorageService = {
         passiveIncome: validatedState.passiveIncome || 0,
         energy: {
           current: validatedState.energy?.current || 0,
-          max: validatedState.energy?.max || 1000,
-          regenRate: validatedState.energy?.regenRate || 1,
+          max: validatedState.energy?.max || 100,
           lastRegenTime: validatedState.energy?.lastRegenTime || Date.now(),
         },
         userId: validatedState.userId || validatedState.currentUser,
@@ -216,14 +215,11 @@ export const StorageService = {
       // Проверяем другие поля энергии
       validatedState.energy.current =
         Number(validatedState.energy.current) || 0;
-      validatedState.energy.max = Number(validatedState.energy.max) || 1000;
-      validatedState.energy.regenRate =
-        Number(validatedState.energy.regenRate) || 1;
+      validatedState.energy.max = Number(validatedState.energy.max) || 100;
     } else {
       validatedState.energy = {
-        current: 1000,
-        max: 1000,
-        regenRate: 1,
+        current: 100,
+        max: 100,
         lastRegenTime: Date.now(),
       };
     }

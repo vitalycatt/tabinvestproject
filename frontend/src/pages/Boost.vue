@@ -69,8 +69,8 @@
           </div>
         </div>
 
-        <!-- Увеличение энергии до 3000 -->
-        <div class="boost-option" @click="handleEnergyUpgrade(3000, 5000)">
+        <!-- Увеличение энергии до 150 -->
+        <div class="boost-option" @click="handleEnergyUpgrade(150, 5000)">
           <img
             src="@/assets/images/Battery.png"
             alt="Energy Limit"
@@ -79,7 +79,7 @@
           <div class="boost-content">
             <div class="boost-name">Лимит энергии</div>
             <div class="boost-description">
-              Увеличить максимальную энергию до 3000
+              Увеличить максимальную энергию до 150
             </div>
             <div class="boost-cost">
               <CoinIcon />
@@ -88,8 +88,8 @@
           </div>
         </div>
 
-        <!-- Увеличение энергии до 5000 -->
-        <div class="boost-option" @click="handleEnergyUpgrade(5000, 10000)">
+        <!-- Увеличение энергии до 200 -->
+        <div class="boost-option" @click="handleEnergyUpgrade(200, 10000)">
           <img
             src="@/assets/images/Battery.png"
             alt="Energy Limit"
@@ -98,7 +98,7 @@
           <div class="boost-content">
             <div class="boost-name">Лимит энергии</div>
             <div class="boost-description">
-              Увеличить максимальную энергию до 5000
+              Увеличить максимальную энергию до 200
             </div>
             <div class="boost-cost">
               <CoinIcon />

@@ -119,9 +119,8 @@ export default async function handler(req, res) {
                     balance: 0,
                     passiveIncome: 0,
                     energy: {
-                        current: 1000,
-                        max: 1000,
-                        regenRate: 1,
+                        current: 100,
+                        max: 100,
                         lastRegenTime: Date.now()
                     },
                     level: {
