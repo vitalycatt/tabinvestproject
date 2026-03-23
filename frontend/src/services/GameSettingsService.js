@@ -15,7 +15,7 @@ export const GameSettingsService = {
      */
 _defaultSettings: {
     tapValue: 1,
-    baseEnergy: 1000,
+    baseEnergy: 100,
     energyRegenRate: 1,
     incomeMultiplier: 1,
     expMultiplier: 1,

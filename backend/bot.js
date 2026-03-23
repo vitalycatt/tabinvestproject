@@ -350,8 +350,8 @@ bot.onText(/\/start(.*)/, async (msg, match) => {
             balance: 0,
             passiveIncome: 0,
             energy: {
-              current: 1000,
-              max: 1000,
+              current: 100,
+              max: 100,
               regenRate: 1,
               lastRegenTime: Date.now(),
             },

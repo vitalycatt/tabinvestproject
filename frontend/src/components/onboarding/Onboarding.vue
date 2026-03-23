@@ -147,11 +147,6 @@ onMounted(async () => {
 
       // Запускаем таймер для пассивного дохода
       store.startPassiveIncomeTimer();
-
-      // Запускаем обновление энергии
-      setInterval(() => {
-        store.regenerateEnergy(store.currentUser.id);
-      }, 1000); // Обновление каждую секунду
     }
 
     // Безопасное использование методов Telegram WebApp
@@ -192,10 +187,6 @@ onMounted(async () => {
       try {
         await store.initializeGame(testUserId);
         store.startPassiveIncomeTimer();
-
-        setInterval(() => {
-          store.regenerateEnergy(store.currentUser.id);
-        }, 1000);
       } catch (e) {
         logger.error('Ошибка инициализации тестового режима:', e);
       }

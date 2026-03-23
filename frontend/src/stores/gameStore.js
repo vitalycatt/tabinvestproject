@@ -13,11 +13,7 @@ export const useGameStore = defineStore("game", {
 
     // Дефолтные настройки из сервиса
     const tapValue = GameSettingsService.getSettingSync("tapValue", 1);
-    const baseEnergy = GameSettingsService.getSettingSync("baseEnergy", 1000);
-    const energyRegenRate = GameSettingsService.getSettingSync(
-      "energyRegenRate",
-      1
-    );
+    const baseEnergy = GameSettingsService.getSettingSync("baseEnergy", 100);
     const incomeMultiplier = GameSettingsService.getSettingSync(
       "incomeMultiplier",
       1
@@ -51,7 +47,6 @@ export const useGameStore = defineStore("game", {
       energy: {
         current: baseEnergy,
         max: baseEnergy,
-        regenRate: energyRegenRate,
         lastRegenTime: Date.now(),
       },
 
@@ -119,8 +114,6 @@ export const useGameStore = defineStore("game", {
       _passiveIncomeTimerId: null,
       _updateLevelTimerId: null,
       _autoSaveTimerId: null,
-      _energyRegenTimerId: null,
-      _lastEnergyUpdateSave: 0,
     };
   },
 
@@ -368,7 +361,6 @@ export const useGameStore = defineStore("game", {
             localStorageData.energy = {
               current: this.energy.current,
               max: this.energy.max,
-              regenRate: this.energy.regenRate,
               lastRegenTime: this.energy.lastRegenTime,
             };
           }
@@ -509,10 +501,8 @@ export const useGameStore = defineStore("game", {
             balance: Number(this.balance) || 0,
             passiveIncome: Number(this.passiveIncome) || 0,
             energy: {
-              // Добавляем данные о энергии в минимальную структуру
               current: Number(this.energy.current) || 0,
-              max: Number(this.energy.max) || 1000,
-              regenRate: Number(this.energy.regenRate) || 1,
+              max: Number(this.energy.max) || 100,
               lastRegenTime: Number(this.energy.lastRegenTime) || Date.now(),
             },
             level: {
@@ -546,8 +536,7 @@ export const useGameStore = defineStore("game", {
           passiveIncome: Number(this.passiveIncome) || 0,
           energy: {
             current: Number(this.energy.current) || 0,
-            max: Number(this.energy.max) || 1000,
-            regenRate: Number(this.energy.regenRate) || 1,
+            max: Number(this.energy.max) || 100,
             lastRegenTime: Number(this.energy.lastRegenTime) || Date.now(),
           },
           level: {
@@ -645,20 +634,19 @@ export const useGameStore = defineStore("game", {
         // Пытаемся сохранить fallback данные при критической ошибке
         try {
           localStorage.setItem(
-            "gameStateFallback",
-            JSON.stringify({
-              balance: this.balance,
-              passiveIncome: this.passiveIncome,
-              energy: {
-                current: this.energy.current,
-                max: this.energy.max,
-                regenRate: this.energy.regenRate,
-                lastRegenTime: Date.now(),
-              },
-              userId: this.currentUser, // Добавляем userId в резервную копию
-              lastSaved: new Date().toISOString(),
-            })
-          );
+              "gameStateFallback",
+              JSON.stringify({
+                balance: this.balance,
+                passiveIncome: this.passiveIncome,
+                energy: {
+                  current: this.energy.current,
+                  max: this.energy.max,
+                  lastRegenTime: Date.now(),
+                },
+                userId: this.currentUser,
+                lastSaved: new Date().toISOString(),
+              })
+            );
         } catch (e) {
           console.error("Ошибка резервного сохранения:", e);
         }
@@ -683,8 +671,7 @@ export const useGameStore = defineStore("game", {
             passiveIncome: Number(this.passiveIncome) || 0,
             energy: {
               current: Number(this.energy.current) || 0,
-              max: Number(this.energy.max) || 1000,
-              regenRate: Number(this.energy.regenRate) || 1,
+              max: Number(this.energy.max) || 100,
               lastRegenTime: Number(this.energy.lastRegenTime) || Date.now(),
             },
             level: {
@@ -849,11 +836,20 @@ export const useGameStore = defineStore("game", {
           // Проверяем lastRegenTime на корректность
           const lastRegenTime = Number(state.energy.lastRegenTime);
 
+          const NEW_MAX_ENERGY = 100;
+          let loadedMax = Number(state.energy.max) || this.energy.max;
+          let loadedCurrent = Number(state.energy.current) || this.energy.current;
+
+          if (loadedMax > NEW_MAX_ENERGY) {
+            loadedMax = NEW_MAX_ENERGY;
+          }
+          if (loadedCurrent > loadedMax) {
+            loadedCurrent = loadedMax;
+          }
+
           this.energy = {
-            current: Number(state.energy.current) || this.energy.current,
-            max: Number(state.energy.max) || this.energy.max,
-            regenRate: Number(state.energy.regenRate) || this.energy.regenRate,
-            // Проверяем, что lastRegenTime - валидное число и не в будущем
+            current: loadedCurrent,
+            max: loadedMax,
             lastRegenTime:
               !isNaN(lastRegenTime) && lastRegenTime <= Date.now()
                 ? lastRegenTime
@@ -914,7 +910,7 @@ export const useGameStore = defineStore("game", {
     },
 
     resetToDefault() {
-      const baseEnergy = GameSettingsService.getSettingSync("baseEnergy", 1000);
+      const baseEnergy = GameSettingsService.getSettingSync("baseEnergy", 100);
       const tapValue = GameSettingsService.getSettingSync("tapValue", 1);
       const levelRequirements = GameSettingsService.getSettingSync(
         "levelRequirements",
@@ -926,7 +922,6 @@ export const useGameStore = defineStore("game", {
       this.energy = {
         current: baseEnergy,
         max: baseEnergy,
-        regenRate: GameSettingsService.getSettingSync("energyRegenRate", 1),
         lastRegenTime: Date.now(),
       };
       this.level = {
@@ -968,33 +963,10 @@ export const useGameStore = defineStore("game", {
       }
 
       if (settings.baseEnergy !== undefined) {
-        // Только если у пользователя нет кастомного значения энергии
-        const isDefaultEnergy =
-          this.energy.max === 1000 ||
-          this.energy.max === GameSettingsService._defaultSettings.baseEnergy;
-
-        if (isDefaultEnergy) {
-          const oldMax = this.energy.max;
-          this.energy.max = settings.baseEnergy;
-
-          // Масштабируем текущую энергию пропорционально новому максимуму
-          if (oldMax > 0) {
-            const ratio = this.energy.current / oldMax;
-            this.energy.current = Math.min(
-              this.energy.max,
-              Math.round(settings.baseEnergy * ratio)
-            );
-          } else {
-            this.energy.current = Math.min(
-              this.energy.current,
-              settings.baseEnergy
-            );
-          }
+        this.energy.max = settings.baseEnergy;
+        if (this.energy.current > this.energy.max) {
+          this.energy.current = this.energy.max;
         }
-      }
-
-      if (settings.energyRegenRate !== undefined) {
-        this.energy.regenRate = settings.energyRegenRate;
       }
 
       if (settings.incomeMultiplier !== undefined) {
@@ -1064,10 +1036,12 @@ export const useGameStore = defineStore("game", {
       if (this._passiveIncomeTimerId) clearInterval(this._passiveIncomeTimerId);
       if (this._updateLevelTimerId) clearInterval(this._updateLevelTimerId);
       if (this._autoSaveTimerId) clearInterval(this._autoSaveTimerId);
-      if (this._energyRegenTimerId) clearInterval(this._energyRegenTimerId); // Добавляем очистку таймера энергии
 
       // Сразу вызываем updateLevel при запуске таймера
       this.updateLevel();
+
+      // Проверяем суточную регенерацию энергии при старте
+      this.checkDailyEnergyRegen();
 
       // Запускаем обработку пассивного дохода и сохраняем ID
       this._passiveIncomeTimerId = setInterval(() => {
@@ -1084,17 +1058,7 @@ export const useGameStore = defineStore("game", {
         this.saveState();
       }, 30000);
 
-      // Добавляем таймер для восстановления энергии (каждую секунду)
-      this._energyRegenTimerId = setInterval(async () => {
-        const uid = this.currentUserId;
-        if (uid && this.energy.current < this.energy.max) {
-          await this.regenerateEnergy(uid);
-        }
-      }, 1000);
-
-      console.log(
-        "Запущены таймеры пассивного дохода и восстановления энергии"
-      );
+      console.log("Запущены таймеры пассивного дохода");
     },
 
     // Метод остановки таймеров
@@ -1116,15 +1080,7 @@ export const useGameStore = defineStore("game", {
         this._autoSaveTimerId = null;
       }
 
-      // Добавляем остановку таймера энергии
-      if (this._energyRegenTimerId) {
-        clearInterval(this._energyRegenTimerId);
-        this._energyRegenTimerId = null;
-      }
-
-      console.log(
-        "Остановлены таймеры пассивного дохода и восстановления энергии"
-      );
+      console.log("Остановлены таймеры пассивного дохода");
     },
 
     async buyInvestment(userId, investmentId) {
@@ -1136,66 +1092,16 @@ export const useGameStore = defineStore("game", {
       return data;
     },
 
-    // Обновленный метод regenerateEnergy
-    async regenerateEnergy(userId) {
+    checkDailyEnergyRegen() {
       const now = Date.now();
-      const deltaTime = (now - this.energy.lastRegenTime) / 1000;
-      //
-      // // Добавляем логирование для отладки (только при первом вызове и каждые 10 секунд)
-      // const shouldLog = !this._lastEnergyLog || (now - this._lastEnergyLog > 10000);
-      //
-      // if (shouldLog) {
-      //     console.log(`[regenerateEnergy] Текущая энергия: ${this.energy.current.toFixed(2)}/${this.energy.max},
-      // скорость восстановления: ${this.energy.regenRate}/сек,
-      // время с последнего обновления: ${deltaTime.toFixed(2)} сек`);
-      //     this._lastEnergyLog = now;
-      // }
+      const REGEN_INTERVAL = 24 * 60 * 60 * 1000;
+      const elapsed = now - (this.energy.lastRegenTime || 0);
 
-      try {
-        const gameData = await ApiService.regenerateEnergy(userId);
-        this.energy.lastRegenTime = gameData.energy.lastRegenTime;
-        this.energy.current = gameData.energy.current;
-      } catch (err) {
-        if (err.message && err.message.includes("Достигнут максимум")) {
-          this.energy.current = this.energy.max;
-          this.energy.lastRegenTime = Date.now();
-          return;
-        }
-        throw err;
+      if (elapsed >= REGEN_INTERVAL) {
+        console.log("[checkDailyEnergyRegen] Прошло 24+ часа, пополняем энергию до максимума");
+        this.energy.current = this.energy.max;
+        this.energy.lastRegenTime = now;
       }
-
-      // // Всегда обновляем lastRegenTime, даже если энергия максимальная
-      // if (this.energy.current >= this.energy.max) {
-      //     this.energy.lastRegenTime = now;
-      //     return;
-      // }
-
-      // // Расчет восстановления энергии
-      // const oldEnergy = this.energy.current;
-      // const regenAmount = this.energy.regenRate * deltaTime;
-      //
-      // this.energy.current = Math.min(
-      //     this.energy.max,
-      //     this.energy.current + regenAmount
-      // );
-      // this.energy.lastRegenTime = now;
-
-      // // Логируем только при существенном изменении
-      // if (shouldLog || regenAmount > 1) {
-      //     console.log(`[regenerateEnergy] Восстановлено ${regenAmount.toFixed(2)} энергии,
-      // текущее значение: ${this.energy.current.toFixed(2)}/${this.energy.max}`);
-      // }
-      //
-      // // Ограничиваем сохранение - вызываем сохранение только если:
-      // // 1. Прошло более 10 секунд с последнего сохранения энергии
-      // // 2. ИЛИ энергия изменилась более чем на 5 единиц
-      // if (!this._lastEnergyUpdateSave) this._lastEnergyUpdateSave = 0;
-      //
-      // const energyChange = this.energy.current - oldEnergy;
-      // if (Math.abs(energyChange) > 5 || now - this._lastEnergyUpdateSave > 10000) {
-      //     this._lastEnergyUpdateSave = now;
-      //     this.saveState();
-      // }
     },
 
     applyBoost(type, customDuration = null) {
@@ -1543,9 +1449,14 @@ export const useGameStore = defineStore("game", {
         );
       }
 
-      // Восстанавливаем энергию
-      this.energy.current = this.energy.max;
-      this.energy.lastRegenTime = now;
+      // Восстанавливаем энергию, если прошло 24+ часа с последнего пополнения
+      const REGEN_INTERVAL = 24 * 60 * 60 * 1000;
+      const energyElapsed = now - (this.energy.lastRegenTime || 0);
+      if (energyElapsed >= REGEN_INTERVAL) {
+        this.energy.current = this.energy.max;
+        this.energy.lastRegenTime = now;
+        console.log("[processOfflineProgress] Энергия восстановлена (прошло 24+ часа)");
+      }
 
       // Проверяем бусты
       Object.keys(this.boosts).forEach((boostKey) => {

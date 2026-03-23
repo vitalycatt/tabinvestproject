@@ -70,56 +70,49 @@ const formatBoostTime = (endTime) => {
   }
 }
 
-// Вычисление времени до полного восстановления энергии
+// Вычисление времени до следующего суточного пополнения энергии
+const REGEN_INTERVAL = 24 * 60 * 60 * 1000
+
 const updateTimeUntilFull = () => {
   if (store.energy.current >= store.energy.max) {
     timeUntilFull.value = ''
     return
   }
 
-  const energyMissing = store.energy.max - store.energy.current
-  const secondsToFull = Math.ceil(energyMissing / store.energy.regenRate)
+  const nextRegenTime = (store.energy.lastRegenTime || Date.now()) + REGEN_INTERVAL
+  const remainingMs = nextRegenTime - Date.now()
 
-  if (secondsToFull <= 0) {
-    timeUntilFull.value = ''
+  if (remainingMs <= 0) {
+    timeUntilFull.value = 'Доступно!'
     return
   }
 
-  // Форматирование времени
-  const hours = Math.floor(secondsToFull / 3600)
-  const minutes = Math.floor((secondsToFull % 3600) / 60)
-  const seconds = secondsToFull % 60
+  const totalSeconds = Math.ceil(remainingMs / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
 
   if (hours > 0) {
     timeUntilFull.value = `${hours}ч ${minutes}м`
   } else if (minutes > 0) {
+    const seconds = totalSeconds % 60
     timeUntilFull.value = `${minutes}м ${seconds}с`
   } else {
-    timeUntilFull.value = `${seconds}с`
+    timeUntilFull.value = `${totalSeconds}с`
   }
 }
 
 onMounted(async () => {
-  // Загрузка настроек визуализации энергии
   try {
     const showTime = await GameSettingsService.getSetting('energy.showRegenerationTime', true)
     showRegenerationTime.value = showTime
-
-    // Проверяем, не нужно ли обновить скорость регенерации энергии
-    const regenRate = await GameSettingsService.getSetting('energyRegenRate', null)
-    if (regenRate !== null && regenRate !== store.energy.regenRate) {
-      logger.log(`Обновляем скорость регенерации энергии: ${store.energy.regenRate} -> ${regenRate}`)
-      store.energy.regenRate = regenRate
-    }
   } catch (error) {
     logger.error('Ошибка загрузки настроек энергии:', error)
   }
 
-  // Запускаем таймер обновления информации
   timerInterval = setInterval(() => {
     updateTimeUntilFull()
   }, 1000)
-  updateTimeUntilFull() // Первое обновление сразу
+  updateTimeUntilFull()
 })
 
 onUnmounted(() => {

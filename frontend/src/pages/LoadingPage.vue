@@ -27,7 +27,6 @@ const progress = ref(0);
 // Переменные для хранения ID таймеров
 let animationTimer;
 let loadingTimeout;
-let energyTimerId;
 let passiveIncomeTimerId;
 let saveStateTimerId;
 
@@ -110,11 +109,6 @@ async function initializeApp() {
 
         // Запускаем таймер для пассивного дохода
         store.startPassiveIncomeTimer();
-
-        // Запускаем обновление энергии с сохранением ID таймера
-        energyTimerId = setInterval(() => {
-          store.regenerateEnergy(store.currentUser.id);
-        }, 1000); // Обновление каждую секунду
       }
 
       // Безопасное использование методов Telegram WebApp
@@ -152,13 +146,6 @@ async function initializeApp() {
         try {
           await store.initializeGame(store.currentUser.id);
           store.startPassiveIncomeTimer();
-
-          // Запускаем обновление энергии с сохранением ID таймера
-          energyTimerId = setInterval(async () => {
-            if (store.gameData.energy.current < store.gamedata.energy.max) {
-              await store.regenerateEnergy(store.currentUser.id);
-            }
-          }, 1000);
         } catch (e) {
           console.error('Ошибка инициализации тестового режима:', e);
         }
@@ -244,7 +231,6 @@ onUnmounted(() => {
   }
 
   // Очищаем таймеры игры
-  if (energyTimerId) clearInterval(energyTimerId);
   if (passiveIncomeTimerId) clearInterval(passiveIncomeTimerId);
   if (saveStateTimerId) clearInterval(saveStateTimerId);
 
