@@ -377,6 +377,68 @@ export const useAdminStore = defineStore("admin", {
       }
     },
 
+    // Транзакции (P2P-переводы)
+    async fetchTransactions(params = {}) {
+      try {
+        const response = await ApiService.getAdminTransactions(params);
+        if (response.success && response.data) {
+          return response.data;
+        }
+        return { items: [], pagination: {} };
+      } catch (error) {
+        this.setError(error.message);
+        console.error("Error fetching transactions:", error);
+        return { items: [], pagination: {} };
+      }
+    },
+
+    async fetchTransactionStats() {
+      try {
+        const response = await ApiService.getAdminTransactionStats();
+        if (response.success && response.data) {
+          return response.data;
+        }
+        return {};
+      } catch (error) {
+        this.setError(error.message);
+        console.error("Error fetching transaction stats:", error);
+        return {};
+      }
+    },
+
+    async adjustUserBalance(userId, amount, reason, adminTelegramId) {
+      try {
+        const response = await ApiService.adjustUserBalance(
+          userId,
+          amount,
+          reason,
+          adminTelegramId
+        );
+        if (response.success) {
+          return response.data;
+        }
+        throw new Error(response.message || "Ошибка корректировки баланса");
+      } catch (error) {
+        this.setError(error.message);
+        console.error("Error adjusting balance:", error);
+        throw error;
+      }
+    },
+
+    async fetchAdminLogs(page = 1, limit = 50) {
+      try {
+        const response = await ApiService.getAdminLogs(page, limit);
+        if (response.success && response.data) {
+          return response.data;
+        }
+        return { items: [], pagination: {} };
+      } catch (error) {
+        this.setError(error.message);
+        console.error("Error fetching admin logs:", error);
+        return { items: [], pagination: {} };
+      }
+    },
+
     // Загрузка всех данных для инициализации админки
     async initializeAdmin() {
       try {

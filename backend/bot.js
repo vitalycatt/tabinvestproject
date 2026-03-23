@@ -25,6 +25,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 
 // ✅ Уникальные имена для новых маршрутов
 import taskUserRoutes from "./routes/tasks/user.js";
+import transferRoutes from "./routes/transferRoutes.js";
 import taskCompleteRoutes from "./routes/tasks/complete.js";
 import { startPassiveIncomeCron } from "./jobs/passiveIncomeJob.js";
 import cors from "cors";
@@ -230,6 +231,7 @@ app.use("/api/admin/investments", investmentRoutes);
 app.use("/api/investments", investmentRoutes);
 app.use("/api/tasks/user", taskUserRoutes);
 app.use("/api/tasks/complete", taskCompleteRoutes);
+app.use("/api/transfer", transferRoutes);
 
 // MAU для проверки на сервере: curl http://localhost:PORT/api/stats/mau
 app.get("/api/stats/mau", async (req, res) => {

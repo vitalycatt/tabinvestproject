@@ -63,6 +63,13 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </template>
+              <template v-else-if="tab.id === 'transactions'">
+                <!-- Иконка транзакций -->
+                <path d="M17 1l4 4-4 4"></path>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <path d="M7 23l-4-4 4-4"></path>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+              </template>
               <template v-else-if="tab.id === 'tasks'">
                 <!-- Иконка заданий -->
                 <path d="M9 11l3 3L22 4"></path>
@@ -124,6 +131,7 @@
     <!-- Основной контент -->
     <div class="admin-content" :class="{ 'sidebar-closed': !isSidebarOpen }">
       <UsersSection v-if="currentTab === 'users'" />
+      <TransactionsSection v-if="currentTab === 'transactions'" />
       <TasksSection v-if="currentTab === 'tasks'" />
       <ProductsSection v-if="currentTab === 'products'" />
       <InvestmentsSection v-if="currentTab === 'investments'" />
@@ -136,6 +144,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import UsersSection from "../components/admin/UsersSection.vue";
+import TransactionsSection from "../components/admin/TransactionsSection.vue";
 import TasksSection from "../components/admin/TasksSection.vue";
 import ProductsSection from "../components/admin/ProductsSection.vue";
 import InvestmentsSection from "../components/admin/InvestmentsSection.vue";
@@ -148,11 +157,14 @@ import { ApiService } from "../services/apiService";
 const adminStore = useAdminStore();
 const router = useRouter();
 
-const currentTab = ref("users");
+const VALID_TABS = ["users", "transactions", "tasks", "products", "investments", "notifications", "settings"];
+const savedTab = localStorage.getItem("admin_current_tab");
+const currentTab = ref(VALID_TABS.includes(savedTab) ? savedTab : "users");
 const isSidebarOpen = ref(window.innerWidth > 768);
 
 const tabs = [
   { id: "users", name: "Пользователи" },
+  { id: "transactions", name: "Транзакции" },
   { id: "tasks", name: "Задания" },
   { id: "products", name: "Продукты" },
   { id: "investments", name: "Инвестиции" },
@@ -166,6 +178,7 @@ const currentTabName = computed(() => {
 
 const switchTab = (tabId) => {
   currentTab.value = tabId;
+  localStorage.setItem("admin_current_tab", tabId);
   if (window.innerWidth <= 768) {
     isSidebarOpen.value = false;
   }

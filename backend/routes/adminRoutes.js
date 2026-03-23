@@ -1,15 +1,17 @@
 // routes/adminRoutes.js - ИСПРАВЛЕННАЯ ВЕРСИЯ (независимо от среды)
+import fs from "fs";
+import jwt from "jsonwebtoken";
+import path from "path";
+import multer from "multer";
 import express from "express";
+
 import User from "../models/User.js";
+import Task from "../models/Task.js";
 import Product from "../models/Product.js";
+import AdminLog from "../models/AdminLog.js";
+import Transaction from "../models/Transaction.js";
 import ProductClaim from "../models/ProductClaim.js";
 import Notification from "../models/Notification.js";
-import Task from "../models/Task.js";
-import jwt from "jsonwebtoken";
-
-import multer from "multer";
-import path from "path";
-import fs from "fs";
 import config, { uploadsPath } from "../config.js";
 
 const router = express.Router();
@@ -1421,6 +1423,292 @@ router.delete("/tasks/:id", async (req, res) => {
   } catch (error) {
     console.error("Ошибка удаления задания:", error);
     res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// ===== ТРАНЗАКЦИИ (P2P-переводы) =====
+
+// Статистика транзакций
+router.get("/transactions/stats", async (req, res) => {
+  try {
+    const now = new Date();
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+
+    const [totalCount, todayCount, volumeResult, uniqueSenders] =
+      await Promise.all([
+        Transaction.countDocuments({ status: "completed" }),
+        Transaction.countDocuments({
+          status: "completed",
+          createdAt: { $gte: todayStart },
+        }),
+        Transaction.aggregate([
+          { $match: { status: "completed" } },
+          { $group: { _id: null, total: { $sum: "$amount" } } },
+        ]),
+        Transaction.distinct("senderTelegramId", { status: "completed" }),
+      ]);
+
+    res.json({
+      success: true,
+      data: {
+        totalTransactions: totalCount,
+        todayTransactions: todayCount,
+        totalVolume: volumeResult[0]?.total ?? 0,
+        uniqueSenders: uniqueSenders.length,
+      },
+    });
+  } catch (error) {
+    console.error("[admin/transactions/stats] error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Список транзакций с фильтрами и пагинацией
+router.get("/transactions", async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 50,
+      userId,
+      status,
+      dateFrom,
+      dateTo,
+      amountMin,
+      amountMax,
+      search,
+    } = req.query;
+
+    const filter = {};
+
+    if (status) {
+      filter.status = status;
+    }
+
+    if (userId) {
+      filter.$or = [
+        { senderTelegramId: userId },
+        { receiverTelegramId: userId },
+      ];
+    }
+
+    if (search) {
+      const searchFilter = {
+        $or: [{ senderTelegramId: search }, { receiverTelegramId: search }],
+      };
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or }, searchFilter];
+        delete filter.$or;
+      } else {
+        filter.$or = searchFilter.$or;
+      }
+    }
+
+    if (dateFrom || dateTo) {
+      filter.createdAt = {};
+      if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) filter.createdAt.$lte = new Date(dateTo);
+    }
+
+    if (amountMin || amountMax) {
+      filter.amount = {};
+      if (amountMin) filter.amount.$gte = Number(amountMin);
+      if (amountMax) filter.amount.$lte = Number(amountMax);
+    }
+
+    const pageNum = Math.max(1, Number(page));
+    const limitNum = Math.min(100, Math.max(1, Number(limit)));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [transactions, total] = await Promise.all([
+      Transaction.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Transaction.countDocuments(filter),
+    ]);
+
+    // Подгружаем данные пользователей
+    const userIds = new Set();
+    for (const tx of transactions) {
+      userIds.add(tx.senderTelegramId);
+      userIds.add(tx.receiverTelegramId);
+    }
+
+    const users = await User.find({
+      telegramId: { $in: [...userIds] },
+    })
+      .select("telegramId username first_name last_name")
+      .lean();
+
+    const userMap = {};
+    for (const u of users) {
+      userMap[u.telegramId] = u;
+    }
+
+    const items = transactions.map((tx) => {
+      const sender = userMap[tx.senderTelegramId] || {};
+      const receiver = userMap[tx.receiverTelegramId] || {};
+      return {
+        id: tx._id,
+        createdAt: tx.createdAt,
+        completedAt: tx.completedAt,
+        sender: {
+          telegramId: tx.senderTelegramId,
+          username: sender.username || null,
+          name:
+            `${sender.first_name || ""} ${sender.last_name || ""}`.trim() ||
+            null,
+        },
+        receiver: {
+          telegramId: tx.receiverTelegramId,
+          username: receiver.username || null,
+          name:
+            `${receiver.first_name || ""} ${receiver.last_name || ""}`.trim() ||
+            null,
+        },
+        amount: tx.amount,
+        senderBalanceBefore: tx.senderBalanceBefore,
+        senderBalanceAfter: tx.senderBalanceAfter,
+        receiverBalanceBefore: tx.receiverBalanceBefore,
+        receiverBalanceAfter: tx.receiverBalanceAfter,
+        status: tx.status,
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        items,
+        pagination: {
+          currentPage: pageNum,
+          totalPages: Math.ceil(total / limitNum),
+          total,
+          pageSize: limitNum,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("[admin/transactions] error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Ручная корректировка баланса пользователя
+router.post("/user/balance", async (req, res) => {
+  try {
+    const { userId, amount, reason, adminTelegramId } = req.body;
+
+    if (!userId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "userId обязателен" });
+    }
+
+    if (typeof amount !== "number" || amount === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Некорректная сумма" });
+    }
+
+    if (!reason || typeof reason !== "string" || reason.trim().length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Причина обязательна" });
+    }
+
+    const user = await User.findOne({ telegramId: String(userId) });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Пользователь не найден" });
+    }
+
+    const balanceBefore = Math.floor(Number(user.gameData?.balance ?? 0));
+    const balanceAfter = balanceBefore + Math.floor(amount);
+
+    if (balanceAfter < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Баланс не может стать отрицательным",
+      });
+    }
+
+    await User.findOneAndUpdate(
+      { telegramId: String(userId) },
+      { $set: { "gameData.balance": balanceAfter } }
+    );
+
+    await AdminLog.create({
+      adminTelegramId: adminTelegramId || "unknown",
+      action: `Корректировка баланса: ${
+        amount > 0 ? "+" : ""
+      }${amount}. Причина: ${reason.trim()}`,
+      targetUserId: String(userId),
+      details: {
+        balanceBefore,
+        balanceAfter,
+        amount: Math.floor(amount),
+        reason: reason.trim(),
+      },
+    });
+
+    console.log(
+      `[admin/user/balance] user ${userId}: ${balanceBefore} -> ${balanceAfter} (${
+        amount > 0 ? "+" : ""
+      }${amount}). Reason: ${reason}`
+    );
+
+    res.json({
+      success: true,
+      data: {
+        telegramId: String(userId),
+        balanceBefore,
+        balanceAfter,
+      },
+    });
+  } catch (error) {
+    console.error("[admin/user/balance] error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Лог действий администратора
+router.get("/logs", async (req, res) => {
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const pageNum = Math.max(1, Number(page));
+    const limitNum = Math.min(100, Math.max(1, Number(limit)));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [logs, total] = await Promise.all([
+      AdminLog.find({})
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      AdminLog.countDocuments({}),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        items: logs,
+        pagination: {
+          currentPage: pageNum,
+          totalPages: Math.ceil(total / limitNum),
+          total,
+          pageSize: limitNum,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("[admin/logs] error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
