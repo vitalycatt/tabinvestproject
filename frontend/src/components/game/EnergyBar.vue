@@ -11,17 +11,6 @@
         {{ timeUntilFull }}
       </div>
     </div>
-
-    <!-- Ускорение -->
-    <div class="energy-item" @click="$router.push('/boost')">
-      <div class="item-icon">
-        <img src="@/assets/images/money.png" alt="money">
-      </div>
-      <div class="item-text">Ускорение</div>
-      <div v-if="hasActiveBoosts" class="boost-indicator">
-        <span>{{ activeBoostText }}</span>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -91,13 +80,13 @@ const updateTimeUntilFull = () => {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
 
+  const seconds = totalSeconds % 60
   if (hours > 0) {
-    timeUntilFull.value = `${hours}ч ${minutes}м`
+    timeUntilFull.value = `${hours}ч ${minutes}м ${seconds}с`
   } else if (minutes > 0) {
-    const seconds = totalSeconds % 60
     timeUntilFull.value = `${minutes}м ${seconds}с`
   } else {
-    timeUntilFull.value = `${totalSeconds}с`
+    timeUntilFull.value = `${seconds}с`
   }
 }
 
@@ -132,7 +121,7 @@ onUnmounted(() => {
   width: 90%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 12px;
 }
 
@@ -176,6 +165,7 @@ onUnmounted(() => {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.8);
   text-shadow: 1px 1px 0 black;
+  white-space: nowrap;
 }
 
 .boost-indicator {

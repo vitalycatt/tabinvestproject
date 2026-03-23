@@ -134,7 +134,7 @@ export const useGameStore = defineStore("game", {
       return "+" + state.formatBigNumber(state.passiveIncome) + "/мес";
     },
     formattedEnergy: (state) => {
-      return `${Math.floor(state.energy.current)} / ${state.energy.max}`;
+      return `${Math.max(0, Math.floor(state.energy.current))} / ${state.energy.max}`;
     },
     effectiveTapValue: (state) => {
       return state.multipliers.tapValue * state.multipliers.tapMultiplier;
@@ -231,6 +231,7 @@ export const useGameStore = defineStore("game", {
       console.log(gameData);
 
       this.energy = gameData.energy;
+      if (this.energy.current < 0) this.energy.current = 0;
       this.balance = gameData.balance;
 
       // // Уменьшаем энергию на 1
@@ -848,7 +849,7 @@ export const useGameStore = defineStore("game", {
           }
 
           this.energy = {
-            current: loadedCurrent,
+            current: Math.max(0, loadedCurrent),
             max: loadedMax,
             lastRegenTime:
               !isNaN(lastRegenTime) && lastRegenTime <= Date.now()

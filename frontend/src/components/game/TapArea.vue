@@ -194,7 +194,7 @@ const executeHandleTap = async () => {
   logger.warn('store.handleTap не найден, fallback реализация')
 
   if (store.energy.current < 1) return 0
-  store.energy.current--
+  store.energy.current = Math.max(0, store.energy.current - 1)
   const reward = store.effectiveTapValue
   store.balance += reward
 
