@@ -3,7 +3,7 @@
   <NotificationsProvider>
     <div class="app">
       <!-- Компонент загрузки -->
-      <Loading v-if="isLoading" @loading-complete="finishLoading"/>
+      <Loading v-if="isLoading" :error="initError" @loading-complete="finishLoading" @retry="retryInit"/>
 
       <!-- Компонент онбординга -->
       <Onboarding v-else-if="showOnboarding" @finish="finishOnboarding"/>
@@ -33,6 +33,7 @@ import Onboarding from '../../components/onboarding/Onboarding.vue';
 
 // Состояния для загрузки и онбординга
 const isLoading = ref(true);
+const initError = ref(false);
 const showOnboarding = ref(false);
 
 // Получение экземпляра хранилища
@@ -91,116 +92,113 @@ const logger = {
 
 provide('logger', logger);
 
-// Инициализация приложения
-onMounted(async () => {
-  // Предзагрузка ресурсов и изображений
-  const preloadImages = () => {
-    return new Promise((resolve) => {
-      const imageUrls = [
-        '/images/onboarding/1.jpg',
-        '/images/onboarding/2.jpg',
-        '/images/onboarding/3.jpg',
-        '/images/onboarding/4.jpg',
-        '/images/bg.jpg',
-        '/images/bg-2.jpg',
-        '/images/coin.png',
-      ];
+function preloadImages() {
+  return new Promise((resolve) => {
+    const imageUrls = [
+      '/images/onboarding/1.jpg',
+      '/images/onboarding/2.jpg',
+      '/images/onboarding/3.jpg',
+      '/images/onboarding/4.jpg',
+      '/images/bg.jpg',
+      '/images/bg-2.jpg',
+      '/images/coin.png',
+    ];
 
-      let loadedCount = 0;
+    let loadedCount = 0;
 
-      imageUrls.forEach(url => {
-        const img = new Image();
-        img.onload = img.onerror = () => {
-          loadedCount++;
-          if (loadedCount === imageUrls.length) {
-            resolve();
-          }
-        };
-        img.src = url;
-      });
+    imageUrls.forEach(url => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loadedCount++;
+        if (loadedCount === imageUrls.length) {
+          resolve();
+        }
+      };
+      img.src = url;
     });
-  };
 
-  // Предзагрузка настроек игры
+    setTimeout(resolve, 10000);
+  });
+}
+
+async function initApp() {
+  initError.value = false;
+
   try {
-    logger.log('Предзагрузка настроек игры...');
-    const gameSettings = await ApiService.getGameSettings();
-    logger.log('Предзагруженные настройки игры:', gameSettings);
-    if (gameSettings?.data) {
-      localStorage.setItem('preloadedGameSettings', JSON.stringify(gameSettings.data));
-    }
-  } catch (error) {
-    logger.error('Ошибка предзагрузки настроек игры:', error);
-  }
-
-  // Инициализация Telegram Web App
-  if (isAvailable.value && tg.value) {
-    logger.log('Telegram WebApp инициализирован');
-    logger.log('Пользователь Telegram:', user.value);
-
-    if (user.value?.id) {
-      // Сохраняем ID пользователя для WebSocket соединения
-      localStorage.setItem('userId', user.value.id);
-
-      // Инициализация игрового состояния
-      await store.initializeGame(user.value.id);
-
-      // Запускаем таймер для пассивного дохода
-      store.startPassiveIncomeTimer();
-    }
-
-    // Безопасное использование методов Telegram WebApp
+    // Предзагрузка настроек игры
     try {
-      // Расширяем приложение
-      expandApp();
-
-      // Безопасно пытаемся включить подтверждение закрытия
-      if (tg.value && typeof tg.value.enableClosingConfirmation === 'function') {
-        tg.value.enableClosingConfirmation();
+      logger.log('Предзагрузка настроек игры...');
+      const gameSettings = await ApiService.getGameSettings();
+      logger.log('Предзагруженные настройки игры:', gameSettings);
+      if (gameSettings?.data) {
+        localStorage.setItem('preloadedGameSettings', JSON.stringify(gameSettings.data));
       }
-
-      // Обработка темы
-      if (tg.value && tg.value.colorScheme === 'dark') {
-        document.body.classList.add('dark-theme');
-      } else {
-        document.body.classList.remove('dark-theme');
-      }
-    } catch (e) {
-      logger.error('Ошибка инициализации функций Telegram WebApp:', e);
+    } catch (error) {
+      logger.error('Ошибка предзагрузки настроек игры:', error);
     }
-  } else {
-    logger.log('Запуск вне Telegram WebApp');
 
-    // Для тестирования вне Telegram
-    if (import.meta.env.DEV) {
-      // Попытка загрузить настройки игры снова (на всякий случай)
-      try {
-        const gameSettings = await GameSettingsService.getSettings();
-        logger.log('Настройки игры в режиме DEV:', gameSettings);
-      } catch (error) {
-        logger.error('Ошибка загрузки настроек в режиме DEV:', error);
+    // Инициализация Telegram Web App
+    if (isAvailable.value && tg.value) {
+      logger.log('Telegram WebApp инициализирован');
+      logger.log('Пользователь Telegram:', user.value);
+
+      if (user.value?.id) {
+        localStorage.setItem('userId', user.value.id);
+        await store.initializeGame(user.value.id);
+        store.startPassiveIncomeTimer();
       }
 
-      const testUserId = '12345';
-      localStorage.setItem('userId', testUserId);
-
       try {
+        expandApp();
+
+        if (tg.value && typeof tg.value.enableClosingConfirmation === 'function') {
+          tg.value.enableClosingConfirmation();
+        }
+
+        if (tg.value && tg.value.colorScheme === 'dark') {
+          document.body.classList.add('dark-theme');
+        } else {
+          document.body.classList.remove('dark-theme');
+        }
+      } catch (e) {
+        logger.error('Ошибка инициализации функций Telegram WebApp:', e);
+      }
+    } else {
+      logger.log('Запуск вне Telegram WebApp');
+
+      if (import.meta.env.DEV) {
+        try {
+          const gameSettings = await GameSettingsService.getSettings();
+          logger.log('Настройки игры в режиме DEV:', gameSettings);
+        } catch (error) {
+          logger.error('Ошибка загрузки настроек в режиме DEV:', error);
+        }
+
+        const testUserId = '12345';
+        localStorage.setItem('userId', testUserId);
         await store.initializeGame(testUserId);
         store.startPassiveIncomeTimer();
-      } catch (e) {
-        logger.error('Ошибка инициализации тестового режима:', e);
       }
     }
+
+    await preloadImages();
+
+    setTimeout(() => {
+      finishLoading();
+    }, 1500);
+  } catch (error) {
+    logger.error('Критическая ошибка инициализации:', error);
+    initError.value = true;
   }
+}
 
-  // Предзагрузка изображений
-  await preloadImages();
+function retryInit() {
+  initError.value = false;
+  initApp();
+}
 
-  // После всех инициализаций через 1.5 секунды завершаем загрузку
-  // Это имитация минимального времени загрузки, чтобы пользователь успел увидеть анимацию
-  setTimeout(() => {
-    finishLoading();
-  }, 1500);
+onMounted(() => {
+  initApp();
 });
 </script>
 

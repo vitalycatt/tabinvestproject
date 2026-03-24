@@ -2,7 +2,9 @@
 <template>
   <div class="loading-container">
     <div class="loading-content">
-      <h1 class="top-title">ПРИЛОЖЕНИЕ ДЛЯ ФОРМИРОВАНИЯ<br>ПАССИВНОГО ДОХОДА</h1>
+      <h1 class="top-title">
+        ПРИЛОЖЕНИЕ ДЛЯ ФОРМИРОВАНИЯ<br />ПАССИВНОГО ДОХОДА
+      </h1>
 
       <div class="blue-box">
         <div class="title-text">ТАПАЛКА</div>
@@ -10,7 +12,14 @@
         <div class="subtitle-text">ПАССИВНОГО ДОХОДА</div>
       </div>
 
-      <div class="loading-progress">
+      <div v-if="error" class="error-block">
+        <div class="error-text">Не удалось загрузить приложение</div>
+        <button class="retry-btn" @click="$emit('retry')">
+          Попробовать снова
+        </button>
+      </div>
+
+      <div v-else class="loading-progress">
         <div class="loading-text">ЗАГРУЗКА...</div>
         <div class="progress-bar">
           <div class="progress-fill" :style="{ width: `${progress}%` }"></div>
@@ -21,30 +30,42 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from "vue";
 
 const props = defineProps({
   duration: {
     type: Number,
-    default: 3000
-  }
+    default: 3000,
+  },
+  error: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-const emit = defineEmits(['loading-complete']);
+const emit = defineEmits(["loading-complete", "retry"]);
 
 const progress = ref(0);
 let animationTimer;
 
-// Упрощенная версия с фиксированной анимацией загрузки
-onMounted(() => {
-  console.log('[LOADING] Component mounted, fixed duration:', props.duration);
+watch(
+  () => props.error,
+  (hasError) => {
+    if (hasError && animationTimer) {
+      cancelAnimationFrame(animationTimer);
+    }
+  }
+);
 
-  // Простая анимация загрузки без интервалов
+onMounted(() => {
+  console.log("[LOADING] Component mounted, fixed duration:", props.duration);
+
   const startTime = Date.now();
   const endTime = startTime + props.duration;
 
-  // Функция для обновления прогресса
   const updateProgress = () => {
+    if (props.error) return;
+
     const now = Date.now();
     const elapsed = now - startTime;
     const percentage = Math.min(100, (elapsed / props.duration) * 100);
@@ -57,12 +78,14 @@ onMounted(() => {
     } else {
       // Загрузка завершена
       progress.value = 100;
-      console.log('[LOADING] Animation complete, emitting event');
+      console.log("[LOADING] Animation complete, emitting event");
 
       // Фиксированная задержка перед эмитом события
       setTimeout(() => {
-        console.log('[LOADING] Emitting loading-complete event');
-        emit('loading-complete');
+        if (!props.error) {
+          console.log("[LOADING] Emitting loading-complete event");
+          emit("loading-complete");
+        }
       }, 500);
     }
   };
@@ -72,7 +95,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  console.log('[LOADING] Component unmounted, cleaning up');
+  console.log("[LOADING] Component unmounted, cleaning up");
   if (animationTimer) {
     cancelAnimationFrame(animationTimer);
   }
@@ -86,7 +109,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100vh;
-  background: url('@/assets/loading_bg.png') center center no-repeat;
+  background: url("@/assets/loading_bg.png") center center no-repeat;
   background-size: cover;
   display: flex;
   justify-content: center;
@@ -139,6 +162,41 @@ onUnmounted(() => {
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 1px;
+}
+
+.error-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 50px;
+}
+
+.error-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+}
+
+.retry-btn {
+  padding: 14px 40px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: rgba(0, 45, 100, 0.85);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.retry-btn:active {
+  transform: scale(0.96);
+  background: rgba(0, 45, 100, 1);
 }
 
 .loading-progress {
