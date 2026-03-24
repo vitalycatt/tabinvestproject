@@ -44,7 +44,7 @@
 ├── lib/                # dbConnect.js
 ├── jobs/               # passiveIncomeJob.js (cron раз в минуту)
 ├── services/           # botService.js
-├── scripts/            # Миграции (например migrateSetDefaultPassiveIncome.js)
+├── scripts/            # Утилиты (check-mau.js)
 └── uploads/            # Загруженные изображения (в dev — локально, в prod — UPLOAD_DIR)
 ```
 

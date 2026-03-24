@@ -837,13 +837,9 @@ export const useGameStore = defineStore("game", {
           // Проверяем lastRegenTime на корректность
           const lastRegenTime = Number(state.energy.lastRegenTime);
 
-          const NEW_MAX_ENERGY = 100;
           let loadedMax = Number(state.energy.max) || this.energy.max;
           let loadedCurrent = Number(state.energy.current) || this.energy.current;
 
-          if (loadedMax > NEW_MAX_ENERGY) {
-            loadedMax = NEW_MAX_ENERGY;
-          }
           if (loadedCurrent > loadedMax) {
             loadedCurrent = loadedMax;
           }

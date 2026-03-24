@@ -509,15 +509,8 @@ router.get("/users/:id", async (req, res) => {
         .json({ success: false, message: "Пользователь не найден" });
     }
 
-    const NEW_MAX_ENERGY = 100;
-    let needSave = false;
-
-    if (user.gameData.energy.max > NEW_MAX_ENERGY) {
-      user.gameData.energy.max = NEW_MAX_ENERGY;
-      if (user.gameData.energy.current > NEW_MAX_ENERGY) {
-        user.gameData.energy.current = NEW_MAX_ENERGY;
-      }
-      needSave = true;
+    if (user.gameData.energy.current > user.gameData.energy.max) {
+      user.gameData.energy.current = user.gameData.energy.max;
     }
 
     const now = Date.now();
@@ -527,10 +520,9 @@ router.get("/users/:id", async (req, res) => {
     if (elapsed >= REGEN_INTERVAL) {
       user.gameData.energy.current = user.gameData.energy.max;
       user.gameData.energy.lastRegenTime = now;
-      needSave = true;
     }
 
-    if (needSave) {
+    if (user.isModified()) {
       await user.save();
     }
 
@@ -554,13 +546,8 @@ router.post("/users/:id/tap", async (req, res) => {
       });
     }
 
-    const NEW_MAX_ENERGY = 100;
-
-    if (user.gameData.energy.max > NEW_MAX_ENERGY) {
-      user.gameData.energy.max = NEW_MAX_ENERGY;
-      if (user.gameData.energy.current > NEW_MAX_ENERGY) {
-        user.gameData.energy.current = NEW_MAX_ENERGY;
-      }
+    if (user.gameData.energy.current > user.gameData.energy.max) {
+      user.gameData.energy.current = user.gameData.energy.max;
     }
 
     const now = Date.now();
