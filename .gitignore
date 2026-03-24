@@ -1,13 +1,16 @@
 # Dependencies
 node_modules/
 
-# Env and secrets
+# Env and secrets — НИКОГДА не коммитим файлы с реальными значениями
 .env
 .env.local
+.env.development
+.env.production
 .env.*.local
 *.local
 backend/.env
 frontend/.env
+frontend/.env.production
 
 # Build and runtime
 dist/
