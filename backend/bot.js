@@ -342,10 +342,6 @@ bot.onText(/\/start(.*)/, async (msg, match) => {
       { telegramId: userId.toString() },
       {
         $setOnInsert: {
-          first_name: msg.from.first_name,
-          last_name: msg.from.last_name,
-          username: msg.from.username,
-          language_code: msg.from.language_code,
           photo_url: null,
           registeredAt: new Date(),
           gameData: {
@@ -367,6 +363,10 @@ bot.onText(/\/start(.*)/, async (msg, match) => {
         },
         $set: {
           lastLogin: new Date(),
+          first_name: msg.from.first_name,
+          last_name: msg.from.last_name,
+          username: msg.from.username,
+          language_code: msg.from.language_code,
         },
       },
       { upsert: true, new: true }
