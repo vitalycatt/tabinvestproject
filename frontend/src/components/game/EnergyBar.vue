@@ -1,13 +1,16 @@
 <!-- src/components/game/EnergyBar.vue -->
 <template>
-  <div class="energy-boost" :class="{ 'no-energy': store.energy.current < 1 }">
+  <div class="energy-boost">
     <!-- Энергия -->
-    <div class="energy-item" :class="{ 'no-energy': store.energy.current < 1 }">
+    <div class="energy-item">
       <div class="item-icon">
-        <img src="@/assets/images/energy.png" alt="energy">
+        <img src="@/assets/images/energy.png" alt="energy" />
       </div>
       <div class="item-count">{{ store.formattedEnergy }}</div>
-      <div v-if="showRegenerationTime && timeUntilFull" class="regeneration-time">
+      <div
+        v-if="showRegenerationTime && timeUntilFull"
+        class="regeneration-time"
+      >
         {{ timeUntilFull }}
       </div>
     </div>
@@ -15,101 +18,105 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
-import { useGameStore } from '@/stores/gameStore'
-import { GameSettingsService } from '@/services/GameSettingsService'
+import { ref, computed, onMounted, onUnmounted, inject } from "vue";
+import { useGameStore } from "@/stores/gameStore";
+import { GameSettingsService } from "@/services/GameSettingsService";
 
-const store = useGameStore()
-const logger = inject('logger', console)
-const timeUntilFull = ref('')
-const showRegenerationTime = ref(true)
-let timerInterval = null
+const store = useGameStore();
+const logger = inject("logger", console);
+const timeUntilFull = ref("");
+const showRegenerationTime = ref(true);
+let timerInterval = null;
 
 // Проверка наличия активных бустов
 const hasActiveBoosts = computed(() => {
-  return store.boosts.tap3x.active || store.boosts.tap5x.active
-})
+  return store.boosts.tap3x.active || store.boosts.tap5x.active;
+});
 
 // Текст активного буста
 const activeBoostText = computed(() => {
   if (store.boosts.tap5x.active) {
-    return `x5 (${formatBoostTime(store.boosts.tap5x.endTime)})`
+    return `x5 (${formatBoostTime(store.boosts.tap5x.endTime)})`;
   }
   if (store.boosts.tap3x.active) {
-    return `x3 (${formatBoostTime(store.boosts.tap3x.endTime)})`
+    return `x3 (${formatBoostTime(store.boosts.tap3x.endTime)})`;
   }
-  return ''
-})
+  return "";
+});
 
 // Форматирование времени буста
 const formatBoostTime = (endTime) => {
-  if (!endTime) return ''
+  if (!endTime) return "";
 
-  const remainingMs = endTime - Date.now()
-  if (remainingMs <= 0) return '00:00'
+  const remainingMs = endTime - Date.now();
+  if (remainingMs <= 0) return "00:00";
 
-  const seconds = Math.floor(remainingMs / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
+  const seconds = Math.floor(remainingMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
 
   if (hours > 0) {
-    return `${hours}ч ${minutes % 60}м`
+    return `${hours}ч ${minutes % 60}м`;
   } else {
-    return `${minutes}м ${seconds % 60}с`
+    return `${minutes}м ${seconds % 60}с`;
   }
-}
+};
 
 // Вычисление времени до следующего суточного пополнения энергии
-const REGEN_INTERVAL = 24 * 60 * 60 * 1000
+const REGEN_INTERVAL = 24 * 60 * 60 * 1000;
 
 const updateTimeUntilFull = () => {
   if (store.energy.current >= store.energy.max) {
-    timeUntilFull.value = ''
-    return
+    timeUntilFull.value = "";
+    return;
   }
 
-  const nextRegenTime = (store.energy.lastRegenTime || Date.now()) + REGEN_INTERVAL
-  const remainingMs = nextRegenTime - Date.now()
+  const nextRegenTime =
+    (store.energy.lastRegenTime || Date.now()) + REGEN_INTERVAL;
+  const remainingMs = nextRegenTime - Date.now();
 
   if (remainingMs <= 0) {
-    timeUntilFull.value = 'Доступно!'
-    return
+    timeUntilFull.value = "Доступно!";
+    return;
   }
 
-  const totalSeconds = Math.ceil(remainingMs / 1000)
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const totalSeconds = Math.ceil(remainingMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-  const seconds = totalSeconds % 60
+  const seconds = totalSeconds % 60;
   if (hours > 0) {
-    timeUntilFull.value = `${hours}ч ${minutes}м ${seconds}с`
+    timeUntilFull.value = `${hours}ч ${minutes}м ${seconds}с`;
   } else if (minutes > 0) {
-    timeUntilFull.value = `${minutes}м ${seconds}с`
+    timeUntilFull.value = `${minutes}м ${seconds}с`;
   } else {
-    timeUntilFull.value = `${seconds}с`
+    timeUntilFull.value = `${seconds}с`;
   }
-}
+};
 
 onMounted(async () => {
   try {
-    const showTime = await GameSettingsService.getSetting('energy.showRegenerationTime', true)
-    showRegenerationTime.value = showTime
+    const showTime = await GameSettingsService.getSetting(
+      "energy.showRegenerationTime",
+      true
+    );
+    showRegenerationTime.value = showTime;
   } catch (error) {
-    logger.error('Ошибка загрузки настроек энергии:', error)
+    logger.error("Ошибка загрузки настроек энергии:", error);
   }
 
   timerInterval = setInterval(() => {
-    updateTimeUntilFull()
-  }, 1000)
-  updateTimeUntilFull()
-})
+    updateTimeUntilFull();
+  }, 1000);
+  updateTimeUntilFull();
+});
 
 onUnmounted(() => {
   // Очищаем таймер при размонтировании компонента
   if (timerInterval) {
-    clearInterval(timerInterval)
+    clearInterval(timerInterval);
   }
-})
+});
 </script>
 
 <style scoped>
@@ -147,11 +154,8 @@ onUnmounted(() => {
   color: white;
   font-size: 16px;
   font-weight: 500;
-  text-shadow:
-      1px 1px 0 black,
-      -1px -1px 0 black,
-      -1px 1px 0 black,
-      1px -1px 0 black;
+  text-shadow: 1px 1px 0 black, -1px -1px 0 black, -1px 1px 0 black,
+    1px -1px 0 black;
 }
 
 .item-text {
@@ -172,25 +176,11 @@ onUnmounted(() => {
   position: absolute;
   top: -15px;
   left: 15px;
-  background: var(--primary-color, #8C60E3);
+  background: var(--primary-color, #8c60e3);
   padding: 2px 6px;
   border-radius: 10px;
   font-size: 10px;
   color: white;
   font-weight: bold;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-.no-energy {
-  animation: shake 0.5s ease-in-out;
-}
-
-.no-energy-shake {
-  animation: shake 0.5s ease-in-out;
 }
 </style>
